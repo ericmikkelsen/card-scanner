@@ -5,7 +5,8 @@
   "description": "A web component that accepts a photo of a magic card, and gets the text output of it.",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build"
+    "build": "tsc && vite build",
+    "start": "npm run dev"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
