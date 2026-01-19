@@ -81,10 +81,20 @@ const ensureModelReady = async (button: HTMLButtonElement, status: HTMLElement):
   showModelReady(button, status);
 };
 
+// Show card reader once model is ready
+const showCardReader = () => {
+  const app = document.getElementById('app');
+  if (!app) return;
+
+  const cardReader = document.createElement('card-reader');
+  app.appendChild(cardReader);
+};
+
 // Initialize model state on page load
 const initializeModelState = async (button: HTMLButtonElement, status: HTMLElement) => {
   try {
     await ensureModelReady(button, status);
+    showCardReader();
   } catch (error) {
     console.error('Model initialization error:', error);
     const message = error instanceof Error ? error.message : 'LanguageModel API not supported.';
@@ -96,6 +106,7 @@ const initializeModelState = async (button: HTMLButtonElement, status: HTMLEleme
 const handleDownloadClick = async (button: HTMLButtonElement, status: HTMLElement) => {
   try {
     await ensureModelReady(button, status);
+    showCardReader();
   } catch (error) {
     console.error('Model download error:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
