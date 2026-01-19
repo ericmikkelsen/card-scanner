@@ -1,4 +1,5 @@
 import styles from './card-reader.css?inline';
+import * as db from './db';
 
 interface ImageSource {
   blob: Blob;
@@ -14,6 +15,7 @@ interface CardData {
   flavor: string;
   power: number | null;
   toughness: number | null;
+  imageUrl?: string;
 }
 
 type LanguageModelAPI = any; // TODO: Use @types/dom-chromium-ai when available
@@ -25,6 +27,7 @@ export class CardReader extends HTMLElement {
   private displayCanvas: HTMLCanvasElement | null = null;
   private captureCanvas: HTMLCanvasElement | null = null;
   private currentImage: ImageSource | null = null;
+  private currentCardData: CardData | null = null;
   private mediaStream: MediaStream | null = null;
   private videoCrop: { sx: number; sy: number; sw: number; sh: number } | null = null;
 
@@ -344,6 +347,7 @@ If the card is not a creature, set power and toughness to null.`,
     const output = this.qs<HTMLElement>('.extracted-data');
     if (!output) return;
 
+    this.currentCardData = cardData;
     const manaCostValue = this.normalizeManaCost(cardData.manaCost).join(', ');
 
     output.innerHTML = `
@@ -382,9 +386,14 @@ If the card is not a creature, set power and toughness to null.`,
             <input type="number" id="card-toughness" value="${cardData.toughness !== null ? cardData.toughness : ''}" />
           </div>
         </div>
-        <button type="button" class="save-btn">Save Card</button>
+        <button type="submit" class="save-btn">Save Card</button>
       </form>
     `;
+
+    const form = output.querySelector('.card-data-form') as HTMLFormElement;
+    if (form) {
+      form.addEventListener('submit', (e) => this.onSaveCard(e, cardData, form));
+    }
   }
 
   private escapeHtml(text: string): string {
@@ -398,6 +407,73 @@ If the card is not a creature, set power and toughness to null.`,
     return value
       .map((entry) => String(entry).trim())
       .filter((entry) => entry.length > 0);
+  }
+
+  private async onSaveCard(e: Event, cardData: CardData, form: HTMLFormElement) {
+    e.preventDefault();
+
+    try {
+      // Collect form values
+      const manaCostInput = form.querySelector('#card-mana') as HTMLInputElement;
+      const typeInput = form.querySelector('#card-type') as HTMLInputElement;
+      const subtypeInput = form.querySelector('#card-subtype') as HTMLInputElement;
+      const textInput = form.querySelector('#card-text') as HTMLTextAreaElement;
+      const flavorInput = form.querySelector('#card-flavor') as HTMLTextAreaElement;
+      const powerInput = form.querySelector('#card-power') as HTMLInputElement;
+      const toughnessInput = form.querySelector('#card-toughness') as HTMLInputElement;
+
+      if (!manaCostInput || !typeInput || !subtypeInput || !textInput || !flavorInput) return;
+
+      // Parse mana cost
+      const manaCost = manaCostInput.value
+        .split(',')
+        .map((m) => m.trim())
+        .filter((m) => m.length > 0);
+
+      // Create save card data
+      const saveData = {
+        name: cardData.name,
+        manaCost,
+        type: typeInput.value,
+        subtype: subtypeInput.value,
+        text: textInput.value,
+        flavor: flavorInput.value,
+        power: powerInput.value ? parseInt(powerInput.value, 10) : null,
+        toughness: toughnessInput.value ? parseInt(toughnessInput.value, 10) : null,
+        imageBlob: this.currentImage?.blob || new Blob(),
+        createdAt: Date.now(),
+      };
+
+      // Save to IndexDB
+      const cardId = await db.saveCard(saveData);
+      console.log('Card saved:', cardId);
+
+      // Show success feedback
+      const output = this.qs<HTMLElement>('.extracted-data');
+      if (output) {
+        output.innerHTML = `
+          <div class="save-success">
+            <h3>✓ Card saved!</h3>
+            <p>${cardData.name}</p>
+            <div class="success-actions">
+              <button type="button" class="scan-another-btn">Scan Another</button>
+              <a href="./library/index.html" class="view-library-link">View Library</a>
+            </div>
+          </div>
+        `;
+
+        const scanBtn = output.querySelector('.scan-another-btn') as HTMLButtonElement;
+        if (scanBtn) {
+          scanBtn.addEventListener('click', () => this.resetPhase());
+        }
+      }
+
+      // Emit custom event
+      this.dispatchEvent(new CustomEvent('cardSaved', { detail: { id: cardId, name: cardData.name } }));
+    } catch (error) {
+      console.error('Failed to save card:', error);
+      alert('Failed to save card. Please try again.');
+    }
   }
 }
 
