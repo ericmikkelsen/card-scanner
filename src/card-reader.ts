@@ -457,7 +457,7 @@ If the card is not a creature, set power and toughness to null.`,
             <p>${cardData.name}</p>
             <div class="success-actions">
               <button type="button" class="scan-another-btn">Scan Another</button>
-              <a href="./library/index.html" class="view-library-link">View Library</a>
+              <a href="/library/" class="view-library-link">View Library</a>
             </div>
           </div>
         `;
