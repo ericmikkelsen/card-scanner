@@ -47,7 +47,7 @@ const downloadModel = async (button: HTMLButtonElement, status: HTMLElement): Pr
   await languageModel!.create({
     monitor(m) {
       m.addEventListener('downloadprogress', (event) => {
-        const e = event as DownloadProgressEvent;
+        const e = event as unknown as DownloadProgressEvent;
         console.log('downloadprogress', e);
         
         const percent = Math.round((e.loaded / (e.total || e.loaded)) * 100);
@@ -82,19 +82,26 @@ const ensureModelReady = async (button: HTMLButtonElement, status: HTMLElement):
 };
 
 // Show card reader once model is ready
-const showCardReader = () => {
-  const app = document.getElementById('app');
-  if (!app) return;
-
+const addCardReader = () => {
+  const container = document.getElementById('readerList');
+  if (!container) return;
   const cardReader = document.createElement('card-reader');
-  app.appendChild(cardReader);
+  container.appendChild(cardReader);
+};
+
+const showReaderControls = () => {
+  const controls = document.getElementById('readerControls');
+  const addBtn = document.getElementById('addCardReaderBtn') as HTMLButtonElement | null;
+  if (controls) controls.style.display = 'flex';
+  if (addBtn) addBtn.disabled = false;
 };
 
 // Initialize model state on page load
 const initializeModelState = async (button: HTMLButtonElement, status: HTMLElement) => {
   try {
     await ensureModelReady(button, status);
-    showCardReader();
+    showReaderControls();
+    addCardReader();
   } catch (error) {
     console.error('Model initialization error:', error);
     const message = error instanceof Error ? error.message : 'LanguageModel API not supported.';
@@ -106,7 +113,8 @@ const initializeModelState = async (button: HTMLButtonElement, status: HTMLEleme
 const handleDownloadClick = async (button: HTMLButtonElement, status: HTMLElement) => {
   try {
     await ensureModelReady(button, status);
-    showCardReader();
+    showReaderControls();
+    addCardReader();
   } catch (error) {
     console.error('Model download error:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -118,4 +126,9 @@ const handleDownloadClick = async (button: HTMLButtonElement, status: HTMLElemen
 export const setupModelDownloader = (button: HTMLButtonElement, status: HTMLElement) => {
   initializeModelState(button, status);
   button.addEventListener('click', () => handleDownloadClick(button, status));
+
+  const addBtn = document.getElementById('addCardReaderBtn') as HTMLButtonElement | null;
+  if (addBtn) {
+    addBtn.addEventListener('click', addCardReader);
+  }
 };
