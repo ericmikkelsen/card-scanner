@@ -4,7 +4,6 @@
   background: linear-gradient(135deg, rgba(100, 108, 255, 0.1) 0%, rgba(100, 108, 255, 0.05) 100%);
   border: 1px solid rgba(100, 108, 255, 0.2);
   border-radius: 12px;
-  margin: 2rem auto;
 }
 
 .card-reader-container {
@@ -49,7 +48,7 @@
 
 .content-wrapper {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 2fr;
   gap: 2rem;
   align-items: start;
 }
@@ -65,6 +64,13 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.image-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: start;
 }
 
 .form-section {
@@ -180,8 +186,10 @@ h2 {
   background: white;
   border-radius: 8px;
   border: 1px solid #e0e0e0;
-  text-align: center;
+  text-align: left;
   transition: all 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .option:hover {
@@ -202,19 +210,12 @@ h2 {
   color: #666;
 }
 
-.divider {
-  text-align: center;
-  color: #bbb;
-  font-size: 0.85rem;
-  font-weight: 500;
-  padding: 0.5rem 0;
-}
-
 /* Image actions */
 .image-actions {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 /* Buttons */
@@ -271,22 +272,41 @@ button:disabled {
   background-color: #dc2626;
 }
 
-.upload-btn,
-.camera-toggle-btn {
+.upload-btn {
   width: 100%;
 }
 
+.camera-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.camera-actions button {
+  flex: 1;
+  width: auto;
+}
+
 .take-photo-btn {
-  width: 100%;
   background-color: #10b981;
-  margin-top: 0.75rem;
 }
 
 .take-photo-btn:hover:not(:disabled) {
   background-color: #059669;
 }
 
+.take-photo-btn:disabled {
+  opacity: 0.6;
+}
+
 /* Camera canvas */
+
+.canvas-wrapper {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+}
+
 .camera-canvas {
   width: 100%;
   height: auto;
@@ -295,23 +315,10 @@ button:disabled {
   border-radius: 8px;
   display: block;
   background: #000;
-  transform: scaleX(-1); /* Mirror the camera feed */
 }
 
-.photo-preview {
-  text-align: center;
-  min-height: 120px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.preview-image {
-  max-width: 100%;
-  height: auto;
-  max-height: 350px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.camera-canvas.camera-active {
+  transform: scaleX(-1);
 }
 
 input[type="file"] {
@@ -325,6 +332,10 @@ input[type="file"] {
 
   .content-wrapper {
     gap: 1rem;
+  }
+
+  .image-options {
+    grid-template-columns: 1fr;
   }
 
   .form-group-grid {
