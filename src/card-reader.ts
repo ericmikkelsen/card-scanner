@@ -29,10 +29,11 @@ export class CardReader extends HTMLElement {
   private displayCanvas: HTMLCanvasElement | null = null;
   private captureCanvas: HTMLCanvasElement | null = null;
   private currentImage: ImageSource | null = null;
-  private currentCardData: CardData | null = null;
   private mediaStream: MediaStream | null = null;
   private videoCrop: { sx: number; sy: number; sw: number; sh: number } | null = null;
   private instanceId: string;
+  private spaceListenerAttached = false;
+  private handleKeydown: (event: KeyboardEvent) => void;
 
   private qs<T extends Element>(selector: string): T | null {
     return this.root.querySelector(selector);
@@ -42,6 +43,15 @@ export class CardReader extends HTMLElement {
     super();
     this.root = this.attachShadow({ mode: 'open' });
     this.instanceId = `card-reader-${++instanceCounter}`;
+    this.handleKeydown = (event: KeyboardEvent) => {
+      if (!this.mediaStream) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('input, textarea, select, button') || target?.isContentEditable) return;
+      if (event.code === 'Space') {
+        event.preventDefault();
+        this.capturePhoto();
+      }
+    };
   }
 
   connectedCallback() {
@@ -65,20 +75,21 @@ export class CardReader extends HTMLElement {
         <div class="image-section">
         <h3>Add Card Image (optional)</h3>
         <div class="image-options">
-          <div class="option">
-            <h3>Take Picture</h3>
-            <button class="camera-toggle-btn" type="button">Turn On Camera</button>
-            <canvas class="camera-canvas" style="display: block;"></canvas>
-            <button class="take-photo-btn" type="button" style="display: none;">Take Photo</button>
+          <div class="option option-camera">
+            <div class="camera-actions">
+              <button class="camera-toggle-btn" type="button">Start Camera</button>
+              <button class="take-photo-btn" type="button" disabled>Take Photo</button>
+            </div>
           </div>
-          <div class="divider">or</div>
-          <div class="option">
+          <div class="canvas-wrapper">
+            <canvas class="camera-canvas"></canvas>
+          </div>
+          <div class="option option-upload">
             <h3>Upload Image</h3>
             <button class="upload-btn" type="button">Choose Image</button>
             <p class="option-description">Upload JPG, PNG, WebP, or Bitmap</p>
           </div>
         </div>
-        <div class="photo-preview"></div>
         <div class="image-actions">
           <button class="process-btn" type="button">Extract Card Data</button>
           <button class="clear-image-btn" type="button">Clear Image</button>
@@ -134,6 +145,13 @@ export class CardReader extends HTMLElement {
     this.fileInput.style.display = 'none';
     container.appendChild(this.fileInput);
 
+    const canvas = container.querySelector('.camera-canvas') as HTMLCanvasElement | null;
+    if (canvas) {
+      canvas.width = 250;
+      canvas.height = 350;
+      this.displayCanvas = canvas;
+    }
+
     this.root.appendChild(container);
   }
 
@@ -185,6 +203,23 @@ export class CardReader extends HTMLElement {
     };
   }
 
+  private getDisplayCanvas(): HTMLCanvasElement | null {
+    if (this.displayCanvas && this.displayCanvas.isConnected) {
+      return this.displayCanvas;
+    }
+
+    const canvas = this.qs<HTMLCanvasElement>('.camera-canvas');
+    if (canvas) {
+      if (!canvas.width || !canvas.height) {
+        canvas.width = 250;
+        canvas.height = 350;
+      }
+      this.displayCanvas = canvas;
+    }
+
+    return canvas;
+  }
+
   private populateForm(cardData: CardData) {
     const inputs = this.getFormInputs();
     inputs.name && (inputs.name.value = cardData.name);
@@ -198,9 +233,37 @@ export class CardReader extends HTMLElement {
   }
 
   private renderPreview(blob: Blob | null) {
-    const preview = this.qs<HTMLElement>('.photo-preview');
-    if (!preview) return;
-    preview.innerHTML = blob ? `<img src="${URL.createObjectURL(blob)}" alt="Card preview" class="preview-image">` : '';
+    const canvas = this.getDisplayCanvas();
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (!blob) return;
+
+    const img = new Image();
+    img.onload = () => {
+      const targetRatio = canvas.width / canvas.height;
+      const imgRatio = img.width / img.height;
+      let sx = 0;
+      let sy = 0;
+      let sw = img.width;
+      let sh = img.height;
+
+      if (imgRatio > targetRatio) {
+        sw = img.height * targetRatio;
+        sx = (img.width - sw) / 2;
+      } else {
+        sh = img.width / targetRatio;
+        sy = (img.height - sh) / 2;
+      }
+
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+    };
+
+    img.src = URL.createObjectURL(blob);
   }
 
   private setCameraUI(isActive: boolean) {
@@ -208,16 +271,19 @@ export class CardReader extends HTMLElement {
     const canvas = this.qs<HTMLCanvasElement>('.camera-canvas');
     const captureBtn = this.qs<HTMLButtonElement>('.take-photo-btn');
 
-    if (btn) btn.textContent = isActive ? 'Turn Off Camera' : 'Turn On Camera';
-    if (canvas) canvas.style.visibility = isActive ? 'visible' : 'hidden';
-    if (captureBtn) captureBtn.style.display = isActive ? 'block' : 'none';
+    if (btn) btn.textContent = isActive ? 'Stop Camera' : 'Start Camera';
+    if (canvas) canvas.classList.toggle('camera-active', isActive);
+    if (captureBtn) {
+      captureBtn.disabled = !isActive;
+      captureBtn.classList.toggle('active', isActive);
+    }
   }
 
   private clearImage() {
     this.currentImage = null;
     this.renderPreview(null);
-    this.setCameraUI(false);
     this.setStatus('', 'info');
+    this.setCameraUI(Boolean(this.mediaStream));
   }
 
   private handleFileSelect(e: Event) {
@@ -230,12 +296,17 @@ export class CardReader extends HTMLElement {
       return;
     }
 
+    if (this.mediaStream) {
+      this.stopCamera();
+      this.setCameraUI(false);
+    }
+
     this.currentImage = { blob: file, source: 'upload' };
     this.renderPreview(file);
   }
 
   private async toggleCamera() {
-    const canvas = this.qs<HTMLCanvasElement>('.camera-canvas');
+    const canvas = this.getDisplayCanvas();
     if (!canvas) return;
 
     if (this.mediaStream) {
@@ -271,33 +342,47 @@ export class CardReader extends HTMLElement {
     displayCanvas.width = 250;
     displayCanvas.height = 350;
 
-    this.captureCanvas = document.createElement('canvas');
-    this.captureCanvas.width = this.video!.videoWidth;
-    this.captureCanvas.height = this.video!.videoHeight;
-    this.displayCanvas = displayCanvas;
+    const video = this.video;
+    if (!video) {
+      this.stopCamera();
+      return;
+    }
 
-    const displayCtx = displayCanvas.getContext('2d')!;
-    const captureCtx = this.captureCanvas.getContext('2d')!;
+    this.captureCanvas = document.createElement('canvas');
+    this.captureCanvas.width = video.videoWidth || displayCanvas.width;
+    this.captureCanvas.height = video.videoHeight || displayCanvas.height;
+    this.displayCanvas = displayCanvas;
+    this.addSpacebarShortcut();
+
+    const displayCtx = displayCanvas.getContext('2d');
+    const captureCtx = this.captureCanvas.getContext('2d');
+    if (!displayCtx || !captureCtx) {
+      this.stopCamera();
+      return;
+    }
+
     const targetRatio = displayCanvas.width / displayCanvas.height;
 
     const drawFrame = () => {
       if (!this.mediaStream || !this.video) return;
+      const liveVideo = this.video;
+      if (!liveVideo) return;
 
       // Calculate crop to match aspect ratio
-      const videoRatio = this.video.videoWidth / this.video.videoHeight;
-      let { sx, sy, sw, sh } = { sx: 0, sy: 0, sw: this.video.videoWidth, sh: this.video.videoHeight };
+      const videoRatio = liveVideo.videoWidth / liveVideo.videoHeight;
+      let { sx, sy, sw, sh } = { sx: 0, sy: 0, sw: liveVideo.videoWidth, sh: liveVideo.videoHeight };
 
       if (videoRatio > targetRatio) {
-        sw = this.video.videoHeight * targetRatio;
-        sx = (this.video.videoWidth - sw) / 2;
+        sw = liveVideo.videoHeight * targetRatio;
+        sx = (liveVideo.videoWidth - sw) / 2;
       } else {
-        sh = this.video.videoWidth / targetRatio;
-        sy = (this.video.videoHeight - sh) / 2;
+        sh = liveVideo.videoWidth / targetRatio;
+        sy = (liveVideo.videoHeight - sh) / 2;
       }
 
       this.videoCrop = { sx, sy, sw, sh };
-      displayCtx.drawImage(this.video, sx, sy, sw, sh, 0, 0, displayCanvas.width, displayCanvas.height);
-      captureCtx.drawImage(this.video, 0, 0, this.video.videoWidth, this.video.videoHeight);
+      displayCtx.drawImage(liveVideo, sx, sy, sw, sh, 0, 0, displayCanvas.width, displayCanvas.height);
+      captureCtx.drawImage(liveVideo, 0, 0, liveVideo.videoWidth, liveVideo.videoHeight);
       requestAnimationFrame(drawFrame);
     };
 
@@ -309,18 +394,20 @@ export class CardReader extends HTMLElement {
     this.mediaStream = null;
     this.video?.pause();
     this.video = null;
+    this.removeSpacebarShortcut();
   }
 
   private capturePhoto() {
-    if (!this.captureCanvas || !this.videoCrop) return;
+    if (!this.captureCanvas || !this.videoCrop || !this.video) return;
 
     const { sx, sy, sw, sh } = this.videoCrop;
     const croppedCanvas = document.createElement('canvas');
     croppedCanvas.width = sw;
     croppedCanvas.height = sh;
 
-    const ctx = croppedCanvas.getContext('2d')!;
-    ctx.drawImage(this.video!, sx, sy, sw, sh, 0, 0, sw, sh);
+    const ctx = croppedCanvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(this.video, sx, sy, sw, sh, 0, 0, sw, sh);
 
     croppedCanvas.toBlob(
       (blob) => {
@@ -333,6 +420,18 @@ export class CardReader extends HTMLElement {
       'image/jpeg',
       0.95
     );
+  }
+
+  private addSpacebarShortcut() {
+    if (this.spaceListenerAttached) return;
+    document.addEventListener('keydown', this.handleKeydown);
+    this.spaceListenerAttached = true;
+  }
+
+  private removeSpacebarShortcut() {
+    if (!this.spaceListenerAttached) return;
+    document.removeEventListener('keydown', this.handleKeydown);
+    this.spaceListenerAttached = false;
   }
 
   disconnectedCallback() {
@@ -418,12 +517,6 @@ If the card is not a creature, set power and toughness to null.`,
     } finally {
       btn.disabled = false;
     }
-  }
-
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
   }
 
   private normalizeManaCost(value: unknown): string[] {
