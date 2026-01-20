@@ -91,17 +91,19 @@ const addCardReader = () => {
 
 const showReaderControls = () => {
   const controls = document.getElementById('readerControls');
-  const addBtn = document.getElementById('addCardReaderBtn') as HTMLButtonElement | null;
   if (controls) controls.style.display = 'flex';
-  if (addBtn) addBtn.disabled = false;
+};
+
+const onModelReady = () => {
+  showReaderControls();
+  addCardReader();
 };
 
 // Initialize model state on page load
 const initializeModelState = async (button: HTMLButtonElement, status: HTMLElement) => {
   try {
     await ensureModelReady(button, status);
-    showReaderControls();
-    addCardReader();
+    onModelReady();
   } catch (error) {
     console.error('Model initialization error:', error);
     const message = error instanceof Error ? error.message : 'LanguageModel API not supported.';
@@ -113,8 +115,7 @@ const initializeModelState = async (button: HTMLButtonElement, status: HTMLEleme
 const handleDownloadClick = async (button: HTMLButtonElement, status: HTMLElement) => {
   try {
     await ensureModelReady(button, status);
-    showReaderControls();
-    addCardReader();
+    onModelReady();
   } catch (error) {
     console.error('Model download error:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -124,11 +125,9 @@ const handleDownloadClick = async (button: HTMLButtonElement, status: HTMLElemen
 };
 
 export const setupModelDownloader = (button: HTMLButtonElement, status: HTMLElement) => {
+  const addBtn = document.getElementById('addCardReaderBtn');
+  
   initializeModelState(button, status);
   button.addEventListener('click', () => handleDownloadClick(button, status));
-
-  const addBtn = document.getElementById('addCardReaderBtn') as HTMLButtonElement | null;
-  if (addBtn) {
-    addBtn.addEventListener('click', addCardReader);
-  }
+  addBtn?.addEventListener('click', addCardReader);
 };

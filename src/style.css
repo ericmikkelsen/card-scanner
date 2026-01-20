@@ -34,6 +34,21 @@ h1 {
   margin-bottom: 2rem;
 }
 
+.reader-controls {
+  margin-top: 1rem;
+  display: none;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.reader-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
