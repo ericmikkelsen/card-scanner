@@ -4,20 +4,163 @@
   background: linear-gradient(135deg, rgba(100, 108, 255, 0.1) 0%, rgba(100, 108, 255, 0.05) 100%);
   border: 1px solid rgba(100, 108, 255, 0.2);
   border-radius: 12px;
-  max-width: 800px;
   margin: 2rem auto;
 }
 
 .card-reader-container {
   display: flex;
   flex-direction: column;
+  gap: 1.5rem;
+}
+
+.header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.header-bar h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: #333;
+}
+
+.content-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 1200px) {
+  .content-wrapper {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+.image-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  color: #333;
+  font-weight: 600;
 }
 
 h2 {
   margin: 0 0 1.5rem 0;
   font-size: 1.5rem;
   color: #333;
+}
+
+/* Form styling */
+.card-data-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-weight: 500;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group textarea {
+  padding: 0.75rem;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  background-color: #fafafa;
+  color: #333;
+  transition: all 0.2s ease;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="number"]:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #646cff;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+}
+
+.form-group-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-status {
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  min-height: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.form-status.status-info {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.form-status.status-success {
+  background-color: #e8f5e9;
+  color: #388e3c;
+}
+
+.form-status.status-error {
+  background-color: #ffebee;
+  color: #d32f2f;
 }
 
 /* Phase display */
@@ -33,7 +176,7 @@ h2 {
 }
 
 .option {
-  padding: 1.5rem;
+  padding: 1.25rem;
   background: white;
   border-radius: 8px;
   border: 1px solid #e0e0e0;
@@ -47,22 +190,31 @@ h2 {
 }
 
 .option h3 {
-  margin: 0 0 1rem 0;
-  font-size: 1.1rem;
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
   color: #333;
+  font-weight: 600;
 }
 
 .option-description {
-  margin: 0.75rem 0 0 0;
-  font-size: 0.9rem;
+  margin: 0.5rem 0 0 0;
+  font-size: 0.85rem;
   color: #666;
 }
 
 .divider {
   text-align: center;
-  color: #999;
-  font-size: 0.9rem;
+  color: #bbb;
+  font-size: 0.85rem;
   font-weight: 500;
+  padding: 0.5rem 0;
+}
+
+/* Image actions */
+.image-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 /* Buttons */
@@ -93,88 +245,94 @@ button:disabled {
   cursor: not-allowed;
 }
 
-.upload-btn,
-.camera-toggle-btn {
-  margin: 0.5rem 0;
+.save-btn {
+  background-color: #10b981;
 }
 
-.take-photo-btn {
-  display: block;
-  margin: 1rem auto 0;
-}
-
-.back-btn {
-  background-color: #999;
-  margin-top: 1rem;
-}
-
-.back-btn:hover:not(:disabled) {
-  background-color: #777;
-}
-
-/* Camera canvas */
-.camera-canvas {
-  width: 100%;
-  max-width: 500px;
-  height: auto;
-  aspect-ratio: 2.5 / 3.5;
-  border: 2px solid #646cff;
-  border-radius: 8px;
-  display: block;
-  margin: 1rem auto;
-  background: #000;
-  transform: scaleX(-1); /* Mirror the camera feed */
-}
-
-/* Process photo phase */
-.phase-process-photo {
-  display: none;
-}
-
-.photo-preview {
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-
-.preview-image {
-  max-width: 100%;
-  max-height: 400px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.save-btn:hover:not(:disabled) {
+  background-color: #059669;
 }
 
 .process-btn {
-  display: block;
-  margin: 1rem auto;
   background-color: #10b981;
+  flex: 1;
 }
 
 .process-btn:hover:not(:disabled) {
   background-color: #059669;
 }
 
-/* Extracted data */
-.extracted-data {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background: white;
+.clear-image-btn {
+  background-color: #ef4444;
+  flex: 1;
+}
+
+.clear-image-btn:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
+.upload-btn,
+.camera-toggle-btn {
+  width: 100%;
+}
+
+.take-photo-btn {
+  width: 100%;
+  background-color: #10b981;
+  margin-top: 0.75rem;
+}
+
+.take-photo-btn:hover:not(:disabled) {
+  background-color: #059669;
+}
+
+/* Camera canvas */
+.camera-canvas {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 2.5 / 3.5;
+  border: 2px solid #646cff;
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  min-height: 100px;
+  display: block;
+  background: #000;
+  transform: scaleX(-1); /* Mirror the camera feed */
 }
 
-.extracted-text {
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  line-height: 1.6;
-  color: #333;
+.photo-preview {
+  text-align: center;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.error {
-  color: #dc2626;
-  font-weight: 500;
+.preview-image {
+  max-width: 100%;
+  height: auto;
+  max-height: 350px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 input[type="file"] {
   display: none;
+}
+
+@media (max-width: 768px) {
+  :host {
+    padding: 1rem;
+  }
+
+  .content-wrapper {
+    gap: 1rem;
+  }
+
+  .form-group-grid {
+    grid-template-columns: 1fr;
+  }
+
+  button {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.95rem;
+  }
 }

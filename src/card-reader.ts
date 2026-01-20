@@ -57,8 +57,13 @@ export class CardReader extends HTMLElement {
     const container = document.createElement('div');
     container.className = 'card-reader-container';
     container.innerHTML = `
-      <div class="phase phase-add-image">
-        <h2>Add Card Image</h2>
+      <div class="header-bar">
+        <h2>Card Scanner</h2>
+        <button class="close-btn" type="button" style="display: none;" aria-label="Close this reader">×</button>
+      </div>
+      <div class="content-wrapper">
+        <div class="image-section">
+        <h3>Add Card Image (optional)</h3>
         <div class="image-options">
           <div class="option">
             <h3>Upload Image</h3>
@@ -73,13 +78,53 @@ export class CardReader extends HTMLElement {
             <button class="take-photo-btn" type="button" style="display: none;">Take Photo</button>
           </div>
         </div>
-      </div>
-      <div class="phase phase-process-photo" style="display: none;">
-        <h2>Process Card</h2>
         <div class="photo-preview"></div>
-        <button class="process-btn" type="button">Extract Card Data</button>
-        <button class="back-btn" type="button">Back</button>
-        <div class="extracted-data"></div>
+        <div class="image-actions">
+          <button class="process-btn" type="button">Extract Card Data</button>
+          <button class="clear-image-btn" type="button">Clear Image</button>
+        </div>
+      </div>
+      <div class="form-section">
+        <h3>Card Details</h3>
+        <form class="card-data-form">
+          <div class="form-group">
+            <label for="${this.instanceId}-name">Card Name</label>
+            <input type="text" id="${this.instanceId}-name" class="input-name" value="" required />
+          </div>
+          <div class="form-group">
+            <label for="${this.instanceId}-mana">Mana Cost (comma separated)</label>
+            <input type="text" id="${this.instanceId}-mana" class="input-mana" value="" />
+          </div>
+          <div class="form-group">
+            <label for="${this.instanceId}-type">Type</label>
+            <input type="text" id="${this.instanceId}-type" class="input-type" value="" />
+          </div>
+          <div class="form-group">
+            <label for="${this.instanceId}-subtype">Subtype</label>
+            <input type="text" id="${this.instanceId}-subtype" class="input-subtype" value="" />
+          </div>
+          <div class="form-group">
+            <label for="${this.instanceId}-text">Card Text</label>
+            <textarea id="${this.instanceId}-text" class="input-text" rows="4"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="${this.instanceId}-flavor">Flavor Text</label>
+            <textarea id="${this.instanceId}-flavor" class="input-flavor flavor-text" rows="3"></textarea>
+          </div>
+          <div class="form-group form-group-grid">
+            <div>
+              <label for="${this.instanceId}-power">Power</label>
+              <input type="number" id="${this.instanceId}-power" class="input-power" />
+            </div>
+            <div>
+              <label for="${this.instanceId}-toughness">Toughness</label>
+              <input type="number" id="${this.instanceId}-toughness" class="input-toughness" />
+            </div>
+          </div>
+          <button type="submit" class="save-btn">Save Card</button>
+        </form>
+        <div class="form-status" aria-live="polite"></div>
+      </div>
       </div>
     `;
 
@@ -98,7 +143,78 @@ export class CardReader extends HTMLElement {
     this.qs<HTMLButtonElement>('.camera-toggle-btn')?.addEventListener('click', () => this.toggleCamera());
     this.qs<HTMLButtonElement>('.take-photo-btn')?.addEventListener('click', () => this.capturePhoto());
     this.qs<HTMLButtonElement>('.process-btn')?.addEventListener('click', () => this.processCard());
-    this.qs<HTMLButtonElement>('.back-btn')?.addEventListener('click', () => this.resetPhase());
+    this.qs<HTMLButtonElement>('.clear-image-btn')?.addEventListener('click', () => this.clearImage());
+    this.qs<HTMLButtonElement>('.close-btn')?.addEventListener('click', () => this.closeReader());
+    this.qs<HTMLFormElement>('.card-data-form')?.addEventListener('submit', (e) => this.onSaveCard(e));
+    this.updateCloseButtonVisibility();
+  }
+
+  private updateCloseButtonVisibility() {
+    const closeBtn = this.qs<HTMLButtonElement>('.close-btn');
+    if (!closeBtn) return;
+
+    const readerList = document.getElementById('readerList');
+    if (!readerList) return;
+
+    const readerCount = readerList.querySelectorAll('card-reader').length;
+    closeBtn.style.display = readerCount > 1 ? 'block' : 'none';
+  }
+
+  private closeReader() {
+    this.stopCamera();
+    this.remove();
+  }
+
+  private setStatus(message: string, type: 'info' | 'success' | 'error') {
+    const status = this.qs<HTMLElement>('.form-status');
+    if (!status) return;
+    status.textContent = message;
+    status.className = `form-status status-${type}`;
+  }
+
+  private populateForm(cardData: CardData) {
+    const nameInput = this.qs<HTMLInputElement>('.input-name');
+    const manaInput = this.qs<HTMLInputElement>('.input-mana');
+    const typeInput = this.qs<HTMLInputElement>('.input-type');
+    const subtypeInput = this.qs<HTMLInputElement>('.input-subtype');
+    const textInput = this.qs<HTMLTextAreaElement>('.input-text');
+    const flavorInput = this.qs<HTMLTextAreaElement>('.input-flavor');
+    const powerInput = this.qs<HTMLInputElement>('.input-power');
+    const toughnessInput = this.qs<HTMLInputElement>('.input-toughness');
+
+    if (nameInput) nameInput.value = cardData.name;
+    if (manaInput) manaInput.value = cardData.manaCost.join(', ');
+    if (typeInput) typeInput.value = cardData.type;
+    if (subtypeInput) subtypeInput.value = cardData.subtype;
+    if (textInput) textInput.value = cardData.text;
+    if (flavorInput) flavorInput.value = cardData.flavor;
+    if (powerInput) powerInput.value = cardData.power !== null ? String(cardData.power) : '';
+    if (toughnessInput) toughnessInput.value = cardData.toughness !== null ? String(cardData.toughness) : '';
+  }
+
+  private renderPreview(blob: Blob | null) {
+    const preview = this.qs<HTMLElement>('.photo-preview');
+    if (!preview) return;
+
+    if (!blob) {
+      preview.innerHTML = '';
+      return;
+    }
+
+    const url = URL.createObjectURL(blob);
+    preview.innerHTML = `<img src="${url}" alt="Card preview" class="preview-image">`;
+  }
+
+  private clearImage() {
+    this.currentImage = null;
+    this.renderPreview(null);
+    const btn = this.qs<HTMLButtonElement>('.camera-toggle-btn');
+    const captureBtn = this.qs<HTMLButtonElement>('.take-photo-btn');
+    const canvas = this.qs<HTMLCanvasElement>('.camera-canvas');
+    if (btn) btn.textContent = 'Turn On Camera';
+    if (captureBtn) captureBtn.style.display = 'none';
+    if (canvas) canvas.style.display = 'none';
+    this.setStatus('', 'info');
   }
 
   private handleFileSelect(e: Event) {
@@ -112,7 +228,7 @@ export class CardReader extends HTMLElement {
     }
 
     this.currentImage = { blob: file, source: 'upload' };
-    this.switchPhase('process');
+    this.renderPreview(file);
   }
 
   private async toggleCamera() {
@@ -222,60 +338,36 @@ export class CardReader extends HTMLElement {
       this.currentImage = { blob, source: 'camera' };
       this.stopCamera();
 
-      // Reset camera UI
       const btn = this.qs<HTMLButtonElement>('.camera-toggle-btn');
-      const captureBtn = this.qs<HTMLButtonElement>('.take-photo-btn');
-      const canvasEl = this.qs<HTMLCanvasElement>('.camera-canvas');
       if (btn) btn.textContent = 'Turn On Camera';
+      const captureBtn = this.qs<HTMLButtonElement>('.take-photo-btn');
       if (captureBtn) captureBtn.style.display = 'none';
-      if (canvasEl) canvasEl.style.display = 'none';
+      const canvas = this.qs<HTMLCanvasElement>('.camera-canvas');
+      if (canvas) canvas.style.display = 'none';
 
-      this.switchPhase('process');
+      this.renderPreview(blob);
     }, 'image/jpeg', 0.95);
   }
 
-  private switchPhase(phase: 'add' | 'process') {
-    const addPhase = this.qs<HTMLElement>('.phase-add-image');
-    const processPhase = this.qs<HTMLElement>('.phase-process-photo');
-    if (!addPhase || !processPhase) return;
-
-    if (phase === 'process') {
-      addPhase.style.display = 'none';
-      processPhase.style.display = 'block';
-
-      if (this.currentImage && processPhase) {
-        const preview = processPhase.querySelector('.photo-preview') as HTMLElement;
-        const url = URL.createObjectURL(this.currentImage.blob);
-        preview.innerHTML = `<img src="${url}" alt="Card preview" class="preview-image">`;
-      }
-    } else {
-      if (addPhase) addPhase.style.display = 'block';
-      if (processPhase) processPhase.style.display = 'none';
-    }
-  }
-
-  private resetPhase() {
-    this.qs<HTMLElement>('.extracted-data')?.replaceChildren();
-    this.currentImage = null;
-    this.switchPhase('add');
+  disconnectedCallback() {
+    this.stopCamera();
   }
 
   private async processCard() {
-    if (!this.currentImage) return;
+    if (!this.currentImage) {
+      this.setStatus('Add an image to extract card data.', 'error');
+      return;
+    }
 
     const btn = this.qs<HTMLButtonElement>('.process-btn');
-    const output = this.qs<HTMLElement>('.extracted-data');
-
-    if (!btn || !output) return;
+    if (!btn) return;
 
     btn.disabled = true;
-    output.textContent = 'Processing...';
+    this.setStatus('Processing image...', 'info');
 
     try {
       const languageModel = (self as { LanguageModel?: LanguageModelAPI }).LanguageModel;
-      if (!languageModel) {
-        throw new Error('LanguageModel API not available');
-      }
+      if (!languageModel) throw new Error('LanguageModel API not available');
 
       const session = await languageModel.create({
         expectedInputs: [
@@ -289,10 +381,7 @@ export class CardReader extends HTMLElement {
         type: 'object',
         properties: {
           name: { type: 'string' },
-          manaCost: {
-            type: 'array',
-            items: { type: 'string' },
-          },
+          manaCost: { type: 'array', items: { type: 'string' } },
           type: { type: 'string' },
           subtype: { type: 'string' },
           text: { type: 'string' },
@@ -325,10 +414,7 @@ export class CardReader extends HTMLElement {
 Use strings for every mana symbol, including generic mana (e.g., "2") and colored symbols like "{U}", "{W}", "{B}", "{R}", "{G}".
 If the card is not a creature, set power and toughness to null.`,
               },
-              {
-                type: 'image',
-                value: this.currentImage.blob,
-              },
+              { type: 'image', value: this.currentImage.blob },
             ],
           },
         ],
@@ -337,66 +423,14 @@ If the card is not a creature, set power and toughness to null.`,
 
       const parsed = typeof cardResult === 'string' ? JSON.parse(cardResult) : cardResult;
       const cardData: CardData = { ...parsed, manaCost: this.normalizeManaCost(parsed.manaCost) };
-      this.renderCardDataForm(cardData);
+      this.populateForm(cardData);
+      this.setStatus('Extracted data filled in. Review and save.', 'success');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      output.innerHTML = `<div class="error">Error: ${message}</div>`;
+      this.setStatus(`Error: ${message}`, 'error');
       console.error('Card processing error:', error);
     } finally {
       btn.disabled = false;
-    }
-  }
-
-  private renderCardDataForm(cardData: CardData) {
-    const output = this.qs<HTMLElement>('.extracted-data');
-    if (!output) return;
-
-    this.currentCardData = cardData;
-    const manaCostValue = this.normalizeManaCost(cardData.manaCost).join(', ');
-
-    output.innerHTML = `
-      <form class="card-data-form">
-        <div class="form-group">
-          <label for="${this.instanceId}-name">Card Name</label>
-          <input type="text" id="${this.instanceId}-name" class="input-name" value="${this.escapeHtml(cardData.name)}" readonly />
-        </div>
-        <div class="form-group">
-          <label for="${this.instanceId}-mana">Mana Cost (comma separated)</label>
-          <input type="text" id="${this.instanceId}-mana" class="input-mana" value="${this.escapeHtml(manaCostValue)}" />
-        </div>
-        <div class="form-group">
-          <label for="${this.instanceId}-type">Type</label>
-          <input type="text" id="${this.instanceId}-type" class="input-type" value="${this.escapeHtml(cardData.type)}" />
-        </div>
-        <div class="form-group">
-          <label for="${this.instanceId}-subtype">Subtype</label>
-          <input type="text" id="${this.instanceId}-subtype" class="input-subtype" value="${this.escapeHtml(cardData.subtype)}" />
-        </div>
-        <div class="form-group">
-          <label for="${this.instanceId}-text">Card Text</label>
-          <textarea id="${this.instanceId}-text" class="input-text" rows="4">${this.escapeHtml(cardData.text)}</textarea>
-        </div>
-        <div class="form-group">
-          <label for="${this.instanceId}-flavor">Flavor Text</label>
-          <textarea id="${this.instanceId}-flavor" class="input-flavor flavor-text" rows="3">${this.escapeHtml(cardData.flavor)}</textarea>
-        </div>
-        <div class="form-group form-group-grid">
-          <div>
-            <label for="${this.instanceId}-power">Power</label>
-            <input type="number" id="${this.instanceId}-power" class="input-power" value="${cardData.power !== null ? cardData.power : ''}" />
-          </div>
-          <div>
-            <label for="${this.instanceId}-toughness">Toughness</label>
-            <input type="number" id="${this.instanceId}-toughness" class="input-toughness" value="${cardData.toughness !== null ? cardData.toughness : ''}" />
-          </div>
-        </div>
-        <button type="submit" class="save-btn">Save Card</button>
-      </form>
-    `;
-
-    const form = output.querySelector('.card-data-form') as HTMLFormElement;
-    if (form) {
-      form.addEventListener('submit', (e) => this.onSaveCard(e, cardData, form));
     }
   }
 
@@ -413,70 +447,48 @@ If the card is not a creature, set power and toughness to null.`,
       .filter((entry) => entry.length > 0);
   }
 
-  private async onSaveCard(e: Event, cardData: CardData, form: HTMLFormElement) {
+  private async onSaveCard(e: Event) {
     e.preventDefault();
 
     try {
-      // Collect form values
-      const manaCostInput = form.querySelector('.input-mana') as HTMLInputElement;
-      const typeInput = form.querySelector('.input-type') as HTMLInputElement;
-      const subtypeInput = form.querySelector('.input-subtype') as HTMLInputElement;
-      const textInput = form.querySelector('.input-text') as HTMLTextAreaElement;
-      const flavorInput = form.querySelector('.input-flavor') as HTMLTextAreaElement;
-      const powerInput = form.querySelector('.input-power') as HTMLInputElement;
-      const toughnessInput = form.querySelector('.input-toughness') as HTMLInputElement;
+      const nameInput = this.qs<HTMLInputElement>('.input-name');
+      const manaCostInput = this.qs<HTMLInputElement>('.input-mana');
+      const typeInput = this.qs<HTMLInputElement>('.input-type');
+      const subtypeInput = this.qs<HTMLInputElement>('.input-subtype');
+      const textInput = this.qs<HTMLTextAreaElement>('.input-text');
+      const flavorInput = this.qs<HTMLTextAreaElement>('.input-flavor');
+      const powerInput = this.qs<HTMLInputElement>('.input-power');
+      const toughnessInput = this.qs<HTMLInputElement>('.input-toughness');
 
-      if (!manaCostInput || !typeInput || !subtypeInput || !textInput || !flavorInput) return;
+      if (!nameInput?.value || !typeInput?.value) {
+        this.setStatus('Name and Type are required.', 'error');
+        return;
+      }
 
-      // Parse mana cost
-      const manaCost = manaCostInput.value
+      const manaCost = (manaCostInput?.value || '')
         .split(',')
         .map((m) => m.trim())
         .filter((m) => m.length > 0);
 
-      // Create save card data
       const saveData = {
-        name: cardData.name,
+        name: nameInput.value,
         manaCost,
         type: typeInput.value,
-        subtype: subtypeInput.value,
-        text: textInput.value,
-        flavor: flavorInput.value,
-        power: powerInput.value ? parseInt(powerInput.value, 10) : null,
-        toughness: toughnessInput.value ? parseInt(toughnessInput.value, 10) : null,
+        subtype: subtypeInput?.value || '',
+        text: textInput?.value || '',
+        flavor: flavorInput?.value || '',
+        power: powerInput?.value ? parseInt(powerInput.value, 10) : null,
+        toughness: toughnessInput?.value ? parseInt(toughnessInput.value, 10) : null,
         imageBlob: this.currentImage?.blob || new Blob(),
         createdAt: Date.now(),
       };
 
-      // Save to IndexDB
       const cardId = await db.saveCard(saveData);
-      console.log('Card saved:', cardId);
-
-      // Show success feedback
-      const output = this.qs<HTMLElement>('.extracted-data');
-      if (output) {
-        output.innerHTML = `
-          <div class="save-success">
-            <h3>✓ Card saved!</h3>
-            <p>${cardData.name}</p>
-            <div class="success-actions">
-              <button type="button" class="scan-another-btn">Scan Another</button>
-              <a href="/library/" class="view-library-link">View Library</a>
-            </div>
-          </div>
-        `;
-
-        const scanBtn = output.querySelector('.scan-another-btn') as HTMLButtonElement;
-        if (scanBtn) {
-          scanBtn.addEventListener('click', () => this.resetPhase());
-        }
-      }
-
-      // Emit custom event
-      this.dispatchEvent(new CustomEvent('cardSaved', { detail: { id: cardId, name: cardData.name } }));
+      this.setStatus(`✓ Card saved! (ID: ${cardId})`, 'success');
+      this.dispatchEvent(new CustomEvent('cardSaved', { detail: { id: cardId, name: saveData.name } }));
     } catch (error) {
       console.error('Failed to save card:', error);
-      alert('Failed to save card. Please try again.');
+      this.setStatus('Failed to save card. Please try again.', 'error');
     }
   }
 }
