@@ -20,6 +20,8 @@ interface CardData {
 
 type LanguageModelAPI = any; // TODO: Use @types/dom-chromium-ai when available
 
+let instanceCounter = 0;
+
 export class CardReader extends HTMLElement {
   private root: ShadowRoot;
   private fileInput: HTMLInputElement | null = null;
@@ -30,6 +32,7 @@ export class CardReader extends HTMLElement {
   private currentCardData: CardData | null = null;
   private mediaStream: MediaStream | null = null;
   private videoCrop: { sx: number; sy: number; sw: number; sh: number } | null = null;
+  private instanceId: string;
 
   private qs<T extends Element>(selector: string): T | null {
     return this.root.querySelector(selector);
@@ -38,6 +41,7 @@ export class CardReader extends HTMLElement {
   constructor() {
     super();
     this.root = this.attachShadow({ mode: 'open' });
+    this.instanceId = `card-reader-${++instanceCounter}`;
   }
 
   connectedCallback() {
@@ -353,37 +357,37 @@ If the card is not a creature, set power and toughness to null.`,
     output.innerHTML = `
       <form class="card-data-form">
         <div class="form-group">
-          <label for="card-name">Card Name</label>
-          <input type="text" id="card-name" value="${this.escapeHtml(cardData.name)}" readonly />
+          <label for="${this.instanceId}-name">Card Name</label>
+          <input type="text" id="${this.instanceId}-name" class="input-name" value="${this.escapeHtml(cardData.name)}" readonly />
         </div>
         <div class="form-group">
-          <label for="card-mana">Mana Cost (comma separated)</label>
-          <input type="text" id="card-mana" value="${this.escapeHtml(manaCostValue)}" />
+          <label for="${this.instanceId}-mana">Mana Cost (comma separated)</label>
+          <input type="text" id="${this.instanceId}-mana" class="input-mana" value="${this.escapeHtml(manaCostValue)}" />
         </div>
         <div class="form-group">
-          <label for="card-type">Type</label>
-          <input type="text" id="card-type" value="${this.escapeHtml(cardData.type)}" />
+          <label for="${this.instanceId}-type">Type</label>
+          <input type="text" id="${this.instanceId}-type" class="input-type" value="${this.escapeHtml(cardData.type)}" />
         </div>
         <div class="form-group">
-          <label for="card-subtype">Subtype</label>
-          <input type="text" id="card-subtype" value="${this.escapeHtml(cardData.subtype)}" />
+          <label for="${this.instanceId}-subtype">Subtype</label>
+          <input type="text" id="${this.instanceId}-subtype" class="input-subtype" value="${this.escapeHtml(cardData.subtype)}" />
         </div>
         <div class="form-group">
-          <label for="card-text">Card Text</label>
-          <textarea id="card-text" rows="4">${this.escapeHtml(cardData.text)}</textarea>
+          <label for="${this.instanceId}-text">Card Text</label>
+          <textarea id="${this.instanceId}-text" class="input-text" rows="4">${this.escapeHtml(cardData.text)}</textarea>
         </div>
         <div class="form-group">
-          <label for="card-flavor">Flavor Text</label>
-          <textarea id="card-flavor" rows="3" class="flavor-text">${this.escapeHtml(cardData.flavor)}</textarea>
+          <label for="${this.instanceId}-flavor">Flavor Text</label>
+          <textarea id="${this.instanceId}-flavor" class="input-flavor flavor-text" rows="3">${this.escapeHtml(cardData.flavor)}</textarea>
         </div>
         <div class="form-group form-group-grid">
           <div>
-            <label for="card-power">Power</label>
-            <input type="number" id="card-power" value="${cardData.power !== null ? cardData.power : ''}" />
+            <label for="${this.instanceId}-power">Power</label>
+            <input type="number" id="${this.instanceId}-power" class="input-power" value="${cardData.power !== null ? cardData.power : ''}" />
           </div>
           <div>
-            <label for="card-toughness">Toughness</label>
-            <input type="number" id="card-toughness" value="${cardData.toughness !== null ? cardData.toughness : ''}" />
+            <label for="${this.instanceId}-toughness">Toughness</label>
+            <input type="number" id="${this.instanceId}-toughness" class="input-toughness" value="${cardData.toughness !== null ? cardData.toughness : ''}" />
           </div>
         </div>
         <button type="submit" class="save-btn">Save Card</button>
@@ -414,13 +418,13 @@ If the card is not a creature, set power and toughness to null.`,
 
     try {
       // Collect form values
-      const manaCostInput = form.querySelector('#card-mana') as HTMLInputElement;
-      const typeInput = form.querySelector('#card-type') as HTMLInputElement;
-      const subtypeInput = form.querySelector('#card-subtype') as HTMLInputElement;
-      const textInput = form.querySelector('#card-text') as HTMLTextAreaElement;
-      const flavorInput = form.querySelector('#card-flavor') as HTMLTextAreaElement;
-      const powerInput = form.querySelector('#card-power') as HTMLInputElement;
-      const toughnessInput = form.querySelector('#card-toughness') as HTMLInputElement;
+      const manaCostInput = form.querySelector('.input-mana') as HTMLInputElement;
+      const typeInput = form.querySelector('.input-type') as HTMLInputElement;
+      const subtypeInput = form.querySelector('.input-subtype') as HTMLInputElement;
+      const textInput = form.querySelector('.input-text') as HTMLTextAreaElement;
+      const flavorInput = form.querySelector('.input-flavor') as HTMLTextAreaElement;
+      const powerInput = form.querySelector('.input-power') as HTMLInputElement;
+      const toughnessInput = form.querySelector('.input-toughness') as HTMLInputElement;
 
       if (!manaCostInput || !typeInput || !subtypeInput || !textInput || !flavorInput) return;
 
