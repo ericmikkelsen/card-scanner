@@ -17,15 +17,21 @@ const languageModel = (self as { LanguageModel?: LanguageModelAPI }).LanguageMod
 const showModelReady = (button: HTMLButtonElement, status: HTMLElement) => {
   console.log('model loaded');
   button.style.display = 'none';
-  status.textContent = 'Model ready';
+  status.textContent = '';
+  status.style.display = 'none';
+  status.setAttribute('aria-hidden', 'true');
 };
 
 const showError = (button: HTMLButtonElement, status: HTMLElement, message: string) => {
+  status.style.display = 'block';
+  status.removeAttribute('aria-hidden');
   status.textContent = message;
   button.disabled = true;
 };
 
 const updateDownloadProgress = (status: HTMLElement, percent: number) => {
+  status.style.display = 'block';
+  status.removeAttribute('aria-hidden');
   status.textContent = percent >= 100
     ? 'Extracting and loading model...'
     : `Downloading... ${percent}%`;
