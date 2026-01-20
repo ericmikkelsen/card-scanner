@@ -66,16 +66,16 @@ export class CardReader extends HTMLElement {
         <h3>Add Card Image (optional)</h3>
         <div class="image-options">
           <div class="option">
-            <h3>Upload Image</h3>
-            <button class="upload-btn" type="button">Choose Image</button>
-            <p class="option-description">Upload JPG, PNG, WebP, or Bitmap</p>
+            <h3>Take Picture</h3>
+            <button class="camera-toggle-btn" type="button">Turn On Camera</button>
+            <canvas class="camera-canvas" style="display: block;"></canvas>
+            <button class="take-photo-btn" type="button" style="display: none;">Take Photo</button>
           </div>
           <div class="divider">or</div>
           <div class="option">
-            <h3>Take Picture</h3>
-            <button class="camera-toggle-btn" type="button">Turn On Camera</button>
-            <canvas class="camera-canvas" style="display: none;"></canvas>
-            <button class="take-photo-btn" type="button" style="display: none;">Take Photo</button>
+            <h3>Upload Image</h3>
+            <button class="upload-btn" type="button">Choose Image</button>
+            <p class="option-description">Upload JPG, PNG, WebP, or Bitmap</p>
           </div>
         </div>
         <div class="photo-preview"></div>
@@ -172,48 +172,51 @@ export class CardReader extends HTMLElement {
     status.className = `form-status status-${type}`;
   }
 
-  private populateForm(cardData: CardData) {
-    const nameInput = this.qs<HTMLInputElement>('.input-name');
-    const manaInput = this.qs<HTMLInputElement>('.input-mana');
-    const typeInput = this.qs<HTMLInputElement>('.input-type');
-    const subtypeInput = this.qs<HTMLInputElement>('.input-subtype');
-    const textInput = this.qs<HTMLTextAreaElement>('.input-text');
-    const flavorInput = this.qs<HTMLTextAreaElement>('.input-flavor');
-    const powerInput = this.qs<HTMLInputElement>('.input-power');
-    const toughnessInput = this.qs<HTMLInputElement>('.input-toughness');
+  private getFormInputs() {
+    return {
+      name: this.qs<HTMLInputElement>('.input-name'),
+      mana: this.qs<HTMLInputElement>('.input-mana'),
+      type: this.qs<HTMLInputElement>('.input-type'),
+      subtype: this.qs<HTMLInputElement>('.input-subtype'),
+      text: this.qs<HTMLTextAreaElement>('.input-text'),
+      flavor: this.qs<HTMLTextAreaElement>('.input-flavor'),
+      power: this.qs<HTMLInputElement>('.input-power'),
+      toughness: this.qs<HTMLInputElement>('.input-toughness'),
+    };
+  }
 
-    if (nameInput) nameInput.value = cardData.name;
-    if (manaInput) manaInput.value = cardData.manaCost.join(', ');
-    if (typeInput) typeInput.value = cardData.type;
-    if (subtypeInput) subtypeInput.value = cardData.subtype;
-    if (textInput) textInput.value = cardData.text;
-    if (flavorInput) flavorInput.value = cardData.flavor;
-    if (powerInput) powerInput.value = cardData.power !== null ? String(cardData.power) : '';
-    if (toughnessInput) toughnessInput.value = cardData.toughness !== null ? String(cardData.toughness) : '';
+  private populateForm(cardData: CardData) {
+    const inputs = this.getFormInputs();
+    inputs.name && (inputs.name.value = cardData.name);
+    inputs.mana && (inputs.mana.value = cardData.manaCost.join(', '));
+    inputs.type && (inputs.type.value = cardData.type);
+    inputs.subtype && (inputs.subtype.value = cardData.subtype);
+    inputs.text && (inputs.text.value = cardData.text);
+    inputs.flavor && (inputs.flavor.value = cardData.flavor);
+    inputs.power && (inputs.power.value = cardData.power !== null ? String(cardData.power) : '');
+    inputs.toughness && (inputs.toughness.value = cardData.toughness !== null ? String(cardData.toughness) : '');
   }
 
   private renderPreview(blob: Blob | null) {
     const preview = this.qs<HTMLElement>('.photo-preview');
     if (!preview) return;
+    preview.innerHTML = blob ? `<img src="${URL.createObjectURL(blob)}" alt="Card preview" class="preview-image">` : '';
+  }
 
-    if (!blob) {
-      preview.innerHTML = '';
-      return;
-    }
+  private setCameraUI(isActive: boolean) {
+    const btn = this.qs<HTMLButtonElement>('.camera-toggle-btn');
+    const canvas = this.qs<HTMLCanvasElement>('.camera-canvas');
+    const captureBtn = this.qs<HTMLButtonElement>('.take-photo-btn');
 
-    const url = URL.createObjectURL(blob);
-    preview.innerHTML = `<img src="${url}" alt="Card preview" class="preview-image">`;
+    if (btn) btn.textContent = isActive ? 'Turn Off Camera' : 'Turn On Camera';
+    if (canvas) canvas.style.visibility = isActive ? 'visible' : 'hidden';
+    if (captureBtn) captureBtn.style.display = isActive ? 'block' : 'none';
   }
 
   private clearImage() {
     this.currentImage = null;
     this.renderPreview(null);
-    const btn = this.qs<HTMLButtonElement>('.camera-toggle-btn');
-    const captureBtn = this.qs<HTMLButtonElement>('.take-photo-btn');
-    const canvas = this.qs<HTMLCanvasElement>('.camera-canvas');
-    if (btn) btn.textContent = 'Turn On Camera';
-    if (captureBtn) captureBtn.style.display = 'none';
-    if (canvas) canvas.style.display = 'none';
+    this.setCameraUI(false);
     this.setStatus('', 'info');
   }
 
@@ -232,22 +235,16 @@ export class CardReader extends HTMLElement {
   }
 
   private async toggleCamera() {
-    const btn = this.qs<HTMLButtonElement>('.camera-toggle-btn');
     const canvas = this.qs<HTMLCanvasElement>('.camera-canvas');
-    const captureBtn = this.qs<HTMLButtonElement>('.take-photo-btn');
+    if (!canvas) return;
 
     if (this.mediaStream) {
       this.stopCamera();
-      if (btn) btn.textContent = 'Turn On Camera';
-      if (canvas) canvas.style.display = 'none';
-      if (captureBtn) captureBtn.style.display = 'none';
+      this.setCameraUI(false);
     } else {
       try {
-        if (!canvas || !captureBtn || !btn) return;
         await this.startCamera(canvas);
-        btn.textContent = 'Turn Off Camera';
-        canvas.style.display = 'block';
-        captureBtn.style.display = 'block';
+        this.setCameraUI(true);
       } catch (error) {
         console.error('Camera error:', error);
         alert('Unable to access camera');
@@ -263,14 +260,11 @@ export class CardReader extends HTMLElement {
 
     // Wait for video dimensions
     await new Promise<void>((resolve) => {
-      const check = () => {
-        if (this.video?.videoWidth) {
-          resolve();
-        } else {
-          requestAnimationFrame(check);
-        }
+      const checkReady = () => {
+        if (this.video?.videoWidth) resolve();
+        else requestAnimationFrame(checkReady);
       };
-      check();
+      checkReady();
     });
 
     // Setup canvases
@@ -278,12 +272,10 @@ export class CardReader extends HTMLElement {
     displayCanvas.height = 350;
 
     this.captureCanvas = document.createElement('canvas');
-    this.captureCanvas.width = this.video.videoWidth;
-    this.captureCanvas.height = this.video.videoHeight;
-
+    this.captureCanvas.width = this.video!.videoWidth;
+    this.captureCanvas.height = this.video!.videoHeight;
     this.displayCanvas = displayCanvas;
 
-    // Start frame drawing
     const displayCtx = displayCanvas.getContext('2d')!;
     const captureCtx = this.captureCanvas.getContext('2d')!;
     const targetRatio = displayCanvas.width / displayCanvas.height;
@@ -291,10 +283,10 @@ export class CardReader extends HTMLElement {
     const drawFrame = () => {
       if (!this.mediaStream || !this.video) return;
 
+      // Calculate crop to match aspect ratio
       const videoRatio = this.video.videoWidth / this.video.videoHeight;
-      let sx = 0, sy = 0, sw = this.video.videoWidth, sh = this.video.videoHeight;
+      let { sx, sy, sw, sh } = { sx: 0, sy: 0, sw: this.video.videoWidth, sh: this.video.videoHeight };
 
-      // Crop video to match display canvas aspect ratio
       if (videoRatio > targetRatio) {
         sw = this.video.videoHeight * targetRatio;
         sx = (this.video.videoWidth - sw) / 2;
@@ -303,9 +295,7 @@ export class CardReader extends HTMLElement {
         sy = (this.video.videoHeight - sh) / 2;
       }
 
-      // Store crop for use when capturing photo
       this.videoCrop = { sx, sy, sw, sh };
-
       displayCtx.drawImage(this.video, sx, sy, sw, sh, 0, 0, displayCanvas.width, displayCanvas.height);
       captureCtx.drawImage(this.video, 0, 0, this.video.videoWidth, this.video.videoHeight);
       requestAnimationFrame(drawFrame);
@@ -324,29 +314,25 @@ export class CardReader extends HTMLElement {
   private capturePhoto() {
     if (!this.captureCanvas || !this.videoCrop) return;
 
-    const crop = this.videoCrop;
+    const { sx, sy, sw, sh } = this.videoCrop;
     const croppedCanvas = document.createElement('canvas');
-    croppedCanvas.width = crop.sw;
-    croppedCanvas.height = crop.sh;
+    croppedCanvas.width = sw;
+    croppedCanvas.height = sh;
 
     const ctx = croppedCanvas.getContext('2d')!;
-    ctx.drawImage(this.video!, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, crop.sw, crop.sh);
+    ctx.drawImage(this.video!, sx, sy, sw, sh, 0, 0, sw, sh);
 
-    croppedCanvas.toBlob((blob) => {
-      if (!blob) return;
-
-      this.currentImage = { blob, source: 'camera' };
-      this.stopCamera();
-
-      const btn = this.qs<HTMLButtonElement>('.camera-toggle-btn');
-      if (btn) btn.textContent = 'Turn On Camera';
-      const captureBtn = this.qs<HTMLButtonElement>('.take-photo-btn');
-      if (captureBtn) captureBtn.style.display = 'none';
-      const canvas = this.qs<HTMLCanvasElement>('.camera-canvas');
-      if (canvas) canvas.style.display = 'none';
-
-      this.renderPreview(blob);
-    }, 'image/jpeg', 0.95);
+    croppedCanvas.toBlob(
+      (blob) => {
+        if (!blob) return;
+        this.currentImage = { blob, source: 'camera' };
+        this.stopCamera();
+        this.setCameraUI(false);
+        this.renderPreview(blob);
+      },
+      'image/jpeg',
+      0.95
+    );
   }
 
   disconnectedCallback() {
@@ -441,51 +427,39 @@ If the card is not a creature, set power and toughness to null.`,
   }
 
   private normalizeManaCost(value: unknown): string[] {
-    if (!Array.isArray(value)) return [];
-    return value
-      .map((entry) => String(entry).trim())
-      .filter((entry) => entry.length > 0);
+    return Array.isArray(value) ? value.map(String).map((s) => s.trim()).filter(Boolean) : [];
   }
 
   private async onSaveCard(e: Event) {
     e.preventDefault();
+    const inputs = this.getFormInputs();
+
+    if (!inputs.name?.value || !inputs.type?.value) {
+      this.setStatus('Name and Type are required.', 'error');
+      return;
+    }
 
     try {
-      const nameInput = this.qs<HTMLInputElement>('.input-name');
-      const manaCostInput = this.qs<HTMLInputElement>('.input-mana');
-      const typeInput = this.qs<HTMLInputElement>('.input-type');
-      const subtypeInput = this.qs<HTMLInputElement>('.input-subtype');
-      const textInput = this.qs<HTMLTextAreaElement>('.input-text');
-      const flavorInput = this.qs<HTMLTextAreaElement>('.input-flavor');
-      const powerInput = this.qs<HTMLInputElement>('.input-power');
-      const toughnessInput = this.qs<HTMLInputElement>('.input-toughness');
-
-      if (!nameInput?.value || !typeInput?.value) {
-        this.setStatus('Name and Type are required.', 'error');
-        return;
-      }
-
-      const manaCost = (manaCostInput?.value || '')
+      const manaCost = (inputs.mana?.value || '')
         .split(',')
         .map((m) => m.trim())
-        .filter((m) => m.length > 0);
+        .filter(Boolean);
 
-      const saveData = {
-        name: nameInput.value,
+      const cardId = await db.saveCard({
+        name: inputs.name.value,
         manaCost,
-        type: typeInput.value,
-        subtype: subtypeInput?.value || '',
-        text: textInput?.value || '',
-        flavor: flavorInput?.value || '',
-        power: powerInput?.value ? parseInt(powerInput.value, 10) : null,
-        toughness: toughnessInput?.value ? parseInt(toughnessInput.value, 10) : null,
+        type: inputs.type.value,
+        subtype: inputs.subtype?.value || '',
+        text: inputs.text?.value || '',
+        flavor: inputs.flavor?.value || '',
+        power: inputs.power?.value ? parseInt(inputs.power.value, 10) : null,
+        toughness: inputs.toughness?.value ? parseInt(inputs.toughness.value, 10) : null,
         imageBlob: this.currentImage?.blob || new Blob(),
         createdAt: Date.now(),
-      };
+      });
 
-      const cardId = await db.saveCard(saveData);
       this.setStatus(`✓ Card saved! (ID: ${cardId})`, 'success');
-      this.dispatchEvent(new CustomEvent('cardSaved', { detail: { id: cardId, name: saveData.name } }));
+      this.dispatchEvent(new CustomEvent('cardSaved', { detail: { id: cardId, name: inputs.name.value } }));
     } catch (error) {
       console.error('Failed to save card:', error);
       this.setStatus('Failed to save card. Please try again.', 'error');
