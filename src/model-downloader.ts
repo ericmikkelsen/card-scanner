@@ -11,7 +11,7 @@ interface LanguageModelAPI {
   create(options?: { monitor?: (m: EventTarget) => void }): Promise<unknown>;
 }
 
-const languageModel = (self as any).LanguageModel as LanguageModelAPI | undefined;
+const languageModel = (self as { LanguageModel?: LanguageModelAPI }).LanguageModel;
 
 // UI state updates
 const showModelReady = (button: HTMLButtonElement, status: HTMLElement) => {
@@ -44,7 +44,11 @@ const downloadModel = async (button: HTMLButtonElement, status: HTMLElement): Pr
   console.log('model download started');
   button.disabled = true;
 
-  await languageModel!.create({
+  if (!languageModel) {
+    throw new Error('LanguageModel API is not supported in this browser.');
+  }
+
+  await languageModel.create({
     monitor(m) {
       m.addEventListener('downloadprogress', (event) => {
         const e = event as unknown as DownloadProgressEvent;
@@ -86,7 +90,8 @@ const addCardReader = () => {
   const container = document.getElementById('readerList');
   if (!container) return;
   const cardReader = document.createElement('card-reader');
-  container.appendChild(cardReader);
+  // Prepend so newest reader appears at the top of the list
+  container.prepend(cardReader);
 };
 
 const showReaderControls = () => {
