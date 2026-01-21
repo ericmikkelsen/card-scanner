@@ -105,8 +105,12 @@ const addCardReader = () => {
   const container = document.getElementById('readerList');
   if (!container) return;
   const cardReader = document.createElement('card-reader');
-  // Prepend so newest reader appears at the top of the list
   container.prepend(cardReader);
+  
+  // Update close button visibility on all readers
+  container.querySelectorAll('card-reader').forEach((reader) => {
+    (reader as any).updateCloseButtonsOnAllReaders();
+  });
 };
 
 const showReaderControls = () => {
