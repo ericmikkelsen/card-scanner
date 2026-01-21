@@ -214,6 +214,18 @@ export class CardReader extends HTMLElement {
     }
     
     this.remove();
+    
+    // Update close button visibility on all remaining readers
+    const readerList = document.getElementById('readerList');
+    if (readerList) {
+      readerList.querySelectorAll('card-reader').forEach((reader) => {
+        (reader as CardReader).updateCloseButtonsOnAllReaders();
+      });
+    }
+  }
+
+  public updateCloseButtonsOnAllReaders() {
+    this.updateCloseButtonVisibility();
   }
 
   private setStatus(message: string, type: 'info' | 'success' | 'error') {
