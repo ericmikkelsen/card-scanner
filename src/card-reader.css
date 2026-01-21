@@ -1,0 +1,204 @@
+:host {
+  display: block;
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(100, 108, 255, 0.1) 0%, rgba(100, 108, 255, 0.05) 100%);
+  border: 1px solid rgba(100, 108, 255, 0.2);
+  border-radius: 12px;
+  max-width: 800px;
+  margin: 2rem auto;
+}
+
+.card-reader-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Main heading styles */
+.card-reader-container > h1,
+.card-reader-container > h2,
+.card-reader-container > h3,
+.card-reader-container > h4,
+.card-reader-container > h5,
+.card-reader-container > h6 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.75rem;
+  color: #333;
+  font-weight: 600;
+}
+
+/* Section heading styles */
+.phase > h1,
+.phase > h2,
+.phase > h3,
+.phase > h4,
+.phase > h5,
+.phase > h6 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+/* Phase display */
+.phase {
+  display: block;
+}
+
+/* Add image phase */
+.phase-add-image .image-options {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.option {
+  padding: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.option:hover {
+  border-color: #646cff;
+  box-shadow: 0 4px 12px rgba(100, 108, 255, 0.1);
+}
+
+.option h1,
+.option h2,
+.option h3,
+.option h4,
+.option h5,
+.option h6 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.option-description {
+  margin: 0.75rem 0 0 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.divider {
+  text-align: center;
+  color: #999;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Buttons */
+button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #646cff;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+button:hover:not(:disabled) {
+  background-color: #535bf2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(100, 108, 255, 0.3);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.upload-btn,
+.camera-toggle-btn {
+  margin: 0.5rem 0;
+}
+
+.take-photo-btn {
+  display: block;
+  margin: 1rem auto 0;
+}
+
+.back-btn {
+  background-color: #999;
+  margin-top: 1rem;
+}
+
+.back-btn:hover:not(:disabled) {
+  background-color: #777;
+}
+
+/* Camera canvas */
+.camera-canvas {
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+  aspect-ratio: 2.5 / 3.5;
+  border: 2px solid #646cff;
+  border-radius: 8px;
+  display: block;
+  margin: 1rem auto;
+  background: #000;
+  transform: scaleX(-1); /* Mirror the camera feed */
+}
+
+/* Process photo phase */
+.phase-process-photo {
+  display: none;
+}
+
+.photo-preview {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 400px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.process-btn {
+  display: block;
+  margin: 1rem auto;
+  background-color: #10b981;
+}
+
+.process-btn:hover:not(:disabled) {
+  background-color: #059669;
+}
+
+/* Extracted data */
+.extracted-data {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  min-height: 100px;
+}
+
+.extracted-text {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.6;
+  color: #333;
+}
+
+.error {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+input[type="file"] {
+  display: none;
+}

@@ -1,0 +1,15 @@
+{
+  "name": "card-scanner",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "A web component that accepts a photo of a magic card, and gets the text output of it.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "start": "npm run dev"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0"
+  }
+}
