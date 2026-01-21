@@ -26,7 +26,8 @@ const showError = (button: HTMLButtonElement, status: HTMLElement, message: stri
   status.style.display = 'block';
   status.removeAttribute('aria-hidden');
   status.textContent = message;
-  button.disabled = true;
+  button.disabled = false; // Allow retry
+  button.textContent = 'Retry Download';
 };
 
 const updateDownloadProgress = (status: HTMLElement, percent: number) => {
@@ -49,28 +50,36 @@ const checkAvailability = async (): Promise<ModelAvailability> => {
 const downloadModel = async (button: HTMLButtonElement, status: HTMLElement): Promise<void> => {
   console.log('model download started');
   button.disabled = true;
+  button.textContent = 'Downloading...';
 
   if (!languageModel) {
     throw new Error('LanguageModel API is not supported in this browser.');
   }
 
-  await languageModel.create({
-    monitor(m) {
-      m.addEventListener('downloadprogress', (event) => {
-        const e = event as unknown as DownloadProgressEvent;
-        console.log('downloadprogress', e);
-        
-        const percent = Math.round((e.loaded / (e.total || e.loaded)) * 100);
-        updateDownloadProgress(status, percent);
+  try {
+    await languageModel.create({
+      monitor(m) {
+        m.addEventListener('downloadprogress', (event) => {
+          const e = event as unknown as DownloadProgressEvent;
+          console.log('downloadprogress', e);
+          
+          const percent = Math.round((e.loaded / (e.total || e.loaded)) * 100);
+          updateDownloadProgress(status, percent);
 
-        if (e.loaded === 1) {
-          console.log('model download finished');
-        }
-      });
-    },
-  });
+          if (e.loaded === 1) {
+            console.log('model download finished');
+          }
+        });
+      },
+    });
 
-  console.log('Model ready');
+    console.log('Model ready');
+  } catch (error) {
+    // Re-enable button for retry
+    button.disabled = false;
+    button.textContent = 'Retry Download';
+    throw error;
+  }
 };
 
 // Handle model availability and download
@@ -129,9 +138,8 @@ const handleDownloadClick = async (button: HTMLButtonElement, status: HTMLElemen
     onModelReady();
   } catch (error) {
     console.error('Model download error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    status.textContent = `Error: ${message}`;
-    button.disabled = false;
+    const message = error instanceof Error ? error.message : 'Download failed. Please try again.';
+    showError(button, status, `Error: ${message}`);
   }
 };
 
