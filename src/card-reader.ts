@@ -34,6 +34,8 @@ export class CardReader extends HTMLElement {
   private instanceId: string;
   private spaceListenerAttached = false;
   private handleKeydown: (event: KeyboardEvent) => void;
+  private editCardId: string | null = null;
+  private savedCardData: CardData | null = null;
 
   private qs<T extends Element>(selector: string): T | null {
     return this.root.querySelector(selector);
@@ -162,6 +164,7 @@ export class CardReader extends HTMLElement {
               <span class="btn-text">Save Card</span>
               <span class="spinner" style="display: none;"></span>
             </button>
+            <div class="save-status status-not-saved">Not saved</div>
             <div class="form-status" aria-live="polite"></div>
         </div>
       </div>
@@ -190,6 +193,13 @@ export class CardReader extends HTMLElement {
     this.qs<HTMLButtonElement>('.process-btn')?.addEventListener('click', () => this.processCard());
     this.qs<HTMLButtonElement>('.close-btn')?.addEventListener('click', () => this.closeReader());
     this.qs<HTMLFormElement>('.card-data-form')?.addEventListener('submit', (e) => this.onSaveCard(e));
+    
+    // Add input listeners for save status tracking
+    const form = this.qs<HTMLFormElement>('.card-data-form');
+    if (form) {
+      form.addEventListener('input', () => this.updateSaveStatus());
+    }
+    
     this.updateCloseButtonVisibility();
   }
 
@@ -496,6 +506,83 @@ export class CardReader extends HTMLElement {
     this.stopCamera();
   }
 
+  // Public methods for external data loading
+  public setCardData(data: CardData & { id?: string }) {
+    if (data.id) {
+      this.editCardId = data.id;
+    }
+    
+    // Store original data for comparison
+    this.savedCardData = {
+      name: data.name,
+      manaCost: data.manaCost,
+      type: data.type,
+      subtype: data.subtype,
+      text: data.text,
+      flavor: data.flavor,
+      power: data.power,
+      toughness: data.toughness,
+    };
+    
+    this.populateForm(this.savedCardData);
+    this.updateSaveStatus();
+  }
+
+  public setImage(blob: Blob) {
+    this.currentImage = { blob, source: 'upload' };
+    this.renderPreview(blob);
+    this.updateButtonStates();
+  }
+
+  private getCurrentFormData(): CardData {
+    const inputs = this.getFormInputs();
+    return {
+      name: inputs.name?.value || '',
+      manaCost: (inputs.mana?.value || '')
+        .split(',')
+        .map((m) => m.trim())
+        .filter(Boolean),
+      type: inputs.type?.value || '',
+      subtype: inputs.subtype?.value || '',
+      text: inputs.text?.value || '',
+      flavor: inputs.flavor?.value || '',
+      power: inputs.power?.value ? parseInt(inputs.power.value, 10) : null,
+      toughness: inputs.toughness?.value ? parseInt(inputs.toughness.value, 10) : null,
+    };
+  }
+
+  private isDataEqual(data1: CardData, data2: CardData): boolean {
+    return (
+      data1.name === data2.name &&
+      data1.type === data2.type &&
+      data1.subtype === data2.subtype &&
+      data1.text === data2.text &&
+      data1.flavor === data2.flavor &&
+      data1.power === data2.power &&
+      data1.toughness === data2.toughness &&
+      data1.manaCost.length === data2.manaCost.length &&
+      data1.manaCost.every((val, idx) => val === data2.manaCost[idx])
+    );
+  }
+
+  private updateSaveStatus() {
+    const statusEl = this.qs<HTMLElement>('.save-status');
+    if (!statusEl) return;
+    
+    if (!this.savedCardData) {
+      // New card, not yet saved
+      statusEl.textContent = 'Not saved';
+      statusEl.className = 'save-status status-not-saved';
+      return;
+    }
+    
+    const currentData = this.getCurrentFormData();
+    const isSaved = this.isDataEqual(currentData, this.savedCardData);
+    
+    statusEl.textContent = isSaved ? 'Saved' : 'Not saved';
+    statusEl.className = isSaved ? 'save-status status-saved' : 'save-status status-not-saved';
+  }
+
   private async processCard() {
     if (!this.currentImage) {
       this.setStatus('Add an image to extract card data.', 'error');
@@ -604,7 +691,7 @@ If the card is not a creature, set power and toughness to null.`,
         .map((m) => m.trim())
         .filter(Boolean);
 
-      const cardId = await db.saveCard({
+      const cardData = {
         name: inputs.name.value,
         manaCost,
         type: inputs.type.value,
@@ -614,11 +701,35 @@ If the card is not a creature, set power and toughness to null.`,
         power: inputs.power?.value ? parseInt(inputs.power.value, 10) : null,
         toughness: inputs.toughness?.value ? parseInt(inputs.toughness.value, 10) : null,
         imageBlob: this.currentImage?.blob || new Blob(),
-        createdAt: Date.now(),
-      });
+        createdAt: Date.now(), // Will be replaced if editing
+      };
 
-      this.setStatus(`✓ Card saved! (ID: ${cardId})`, 'success');
-      this.dispatchEvent(new CustomEvent('cardSaved', { detail: { id: cardId, name: inputs.name.value } }));
+      if (this.editCardId) {
+        // Update existing card - fetch original to preserve createdAt
+        const existingCard = await db.getCardById(this.editCardId);
+        if (existingCard) {
+          cardData.createdAt = existingCard.createdAt;
+        }
+        
+        await db.updateCard(this.editCardId, cardData);
+        
+        // Update saved data for comparison
+        this.savedCardData = this.getCurrentFormData();
+        this.updateSaveStatus();
+        
+        this.setStatus(`✓ Card updated!`, 'success');
+      } else {
+        // Create new card
+        const cardId = await db.saveCard(cardData);
+        
+        // Store ID and data for future updates
+        this.editCardId = cardId;
+        this.savedCardData = this.getCurrentFormData();
+        this.updateSaveStatus();
+        
+        this.setStatus(`✓ Card saved! (ID: ${cardId})`, 'success');
+        this.dispatchEvent(new CustomEvent('cardSaved', { detail: { id: cardId, name: inputs.name.value } }));
+      }
     } catch (error) {
       console.error('Failed to save card:', error);
       
