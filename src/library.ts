@@ -1,6 +1,40 @@
 import * as db from './db';
 import type { SavedCard } from './db';
 
+interface ManaColor {
+  filterClass: string;
+}
+
+function getManaColor(manaCost: string[]): ManaColor {
+  if (!manaCost || manaCost.length === 0) {
+    return { filterClass: 'filter-artifact' };
+  }
+
+  const colors = new Set<string>();
+  manaCost.forEach(cost => {
+    const match = cost.match(/\{([UBRG]|W)\}/i);
+    if (match) colors.add(match[1].toUpperCase());
+  });
+
+  if (colors.size === 0) {
+    return { filterClass: 'filter-artifact' };
+  }
+
+  if (colors.size > 1) {
+    return { filterClass: 'filter-gold' };
+  }
+
+  const color = colors.values().next().value;
+  switch (color) {
+    case 'W': return { filterClass: 'filter-white' };
+    case 'U': return { filterClass: 'filter-blue' };
+    case 'B': return { filterClass: 'filter-black' };
+    case 'R': return { filterClass: 'filter-red' };
+    case 'G': return { filterClass: 'filter-green' };
+    default: return { filterClass: 'filter-artifact' };
+  }
+}
+
 let allCards: SavedCard[] = [];
 let filteredCards: SavedCard[] = [];
 let cardToDelete: SavedCard | null = null;
@@ -41,9 +75,10 @@ function renderCards(cards: SavedCard[]) {
   container.innerHTML = cards.map((card) => {
     const imageUrl = URL.createObjectURL(card.imageBlob);
     blobUrls.add(imageUrl);
+    const manaColor = getManaColor(card.manaCost);
     return `
       <div class="card-item">
-        <img src="${imageUrl}" alt="${escapeHtml(card.name)}" class="card-image-preview" />
+        <img src="${imageUrl}" alt="${escapeHtml(card.name)}" class="card-image-preview ${manaColor.filterClass}" />
         <div class="card-info">
           <h3 class="card-name">${escapeHtml(card.name)}</h3>
           <p class="card-type">${escapeHtml(card.type)} — ${escapeHtml(card.subtype)}</p>
