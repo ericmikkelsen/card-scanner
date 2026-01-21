@@ -4,6 +4,7 @@ import type { SavedCard } from './db';
 let allCards: SavedCard[] = [];
 let filteredCards: SavedCard[] = [];
 let cardToDelete: SavedCard | null = null;
+let blobUrls: Set<string> = new Set();
 
 async function loadCards() {
   const loading = document.getElementById('loading');
@@ -33,8 +34,13 @@ function renderCards(cards: SavedCard[]) {
   const container = document.getElementById('cards-container');
   if (!container) return;
   
+  // Revoke old Blob URLs to prevent memory leak
+  blobUrls.forEach(url => URL.revokeObjectURL(url));
+  blobUrls.clear();
+  
   container.innerHTML = cards.map((card) => {
     const imageUrl = URL.createObjectURL(card.imageBlob);
+    blobUrls.add(imageUrl);
     return `
       <div class="card-item">
         <img src="${imageUrl}" alt="${escapeHtml(card.name)}" class="card-image-preview" />
@@ -110,6 +116,10 @@ function closeDeleteModal() {
   
   modal.classList.remove('active');
   cardToDelete = null;
+  
+  // Return focus to the document
+  const container = document.getElementById('cards-container');
+  container?.focus();
 }
 
 async function confirmDelete() {
@@ -152,6 +162,30 @@ document.addEventListener('DOMContentLoaded', () => {
         confirmDelete();
       } else if (e.target === modal) {
         closeDeleteModal();
+      }
+    });
+    
+    // Keyboard handler for Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('active')) {
+        closeDeleteModal();
+      }
+    });
+    
+    // Simple focus trap
+    modal.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab' && modal.classList.contains('active')) {
+        const focusableElements = modal.querySelectorAll('button');
+        const firstElement = focusableElements[0] as HTMLElement;
+        const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+        
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
       }
     });
   }
