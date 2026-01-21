@@ -132,12 +132,20 @@ async function confirmDelete() {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('search');
+  const searchBtn = document.querySelector('.search-btn');
   const container = document.getElementById('cards-container');
   const modal = document.getElementById('delete-modal');
   
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
       filterCards((e.target as HTMLInputElement).value);
+    });
+  }
+
+  if (searchBtn) {
+    searchBtn.addEventListener('click', () => {
+      const value = (searchInput as HTMLInputElement).value;
+      filterCards(value);
     });
   }
   
