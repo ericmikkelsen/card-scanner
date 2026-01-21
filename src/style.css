@@ -68,6 +68,66 @@ h1 {
   display: inline-block;
 }
 
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid #000;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 2.5rem;
+}
+
+.back-link {
+  color: #000;
+  text-decoration: none;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1.5rem;
+  border: 2px solid #000;
+  transition: all 0.2s;
+  background: #fff;
+}
+
+.back-link:hover {
+  background: #000;
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+.error-message {
+  text-align: center;
+  padding: 3rem 2rem;
+  border: 3px dashed var(--mtg-red);
+  background: rgba(220, 40, 30, 0.05);
+}
+
+.error-message p {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #000;
+  margin-bottom: 1.5rem;
+}
+
+.error-message a {
+  color: var(--mtg-red);
+  font-weight: 700;
+  text-decoration: none;
+  border-bottom: 2px solid var(--mtg-red);
+  padding: 0.5rem 1rem;
+  display: inline-block;
+}
+
+.error-message a:hover {
+  background: var(--mtg-red);
+  color: #fff;
+}
+
 #downloadModelBtn {
   align-self: flex-start;
   background: #000;
