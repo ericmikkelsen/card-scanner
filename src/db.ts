@@ -56,6 +56,20 @@ export async function saveCard(card: Omit<SavedCard, 'id'>): Promise<string> {
   });
 }
 
+export async function updateCard(id: string, card: Omit<SavedCard, 'id'>): Promise<void> {
+  const db = await openDatabase();
+  const cardWithId: SavedCard = { ...card, id };
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.put(cardWithId);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve();
+  });
+}
+
 export async function getAllCards(): Promise<SavedCard[]> {
   const db = await openDatabase();
 
