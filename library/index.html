@@ -277,7 +277,7 @@
 
       .card-image-preview {
         width: 100%;
-        height: 350px;
+        height: auto;
         object-fit: contain;
         background: #000;
         display: block;
@@ -514,125 +514,9 @@
         }
       }
 
-      /* Risograph Duo-Tone Filters */
-      .card-image-preview.filter-white { filter: url(#filter-white); }
-      .card-image-preview.filter-blue { filter: url(#filter-blue); }
-      .card-image-preview.filter-black { filter: url(#filter-black); }
-      .card-image-preview.filter-red { filter: url(#filter-red); }
-      .card-image-preview.filter-green { filter: url(#filter-green); }
-      .card-image-preview.filter-gold { filter: url(#filter-gold); }
-      .card-image-preview.filter-artifact { filter: url(#filter-artifact); }
     </style>
   </head>
   <body>
-    <svg style="display: none;">
-      <defs>
-        <!-- White/Gold -->
-        <filter id="filter-white">
-          <feColorMatrix type="matrix" values="
-            0.33 0.33 0.33 0 0
-            0.33 0.33 0.33 0 0
-            0.33 0.33 0.33 0 0
-            0 0 0 1 0
-          "/>
-          <feComponentTransfer>
-            <feFuncR type="linear" slope="0.8" intercept="0.2"/>
-            <feFuncG type="linear" slope="0.8" intercept="0.2"/>
-            <feFuncB type="linear" slope="0.8" intercept="0.2"/>
-          </feComponentTransfer>
-        </filter>
-
-        <!-- Blue -->
-        <filter id="filter-blue">
-          <feColorMatrix type="matrix" values="
-            0.33 0.33 0.33 0 0
-            0.33 0.33 0.33 0 0
-            0.33 0.33 0.33 0 0
-            0 0 0 1 0
-          "/>
-          <feComponentTransfer>
-            <feFuncR type="linear" slope="0.2" intercept="0"/>
-            <feFuncG type="linear" slope="0.4" intercept="0"/>
-            <feFuncB type="linear" slope="1" intercept="0"/>
-          </feComponentTransfer>
-        </filter>
-
-        <!-- Black -->
-        <filter id="filter-black">
-          <feColorMatrix type="matrix" values="
-            0.33 0.33 0.33 0 0
-            0.33 0.33 0.33 0 0
-            0.33 0.33 0.33 0 0
-            0 0 0 1 0
-          "/>
-          <feComponentTransfer>
-            <feFuncR type="linear" slope="0.15"/>
-            <feFuncG type="linear" slope="0.15"/>
-            <feFuncB type="linear" slope="0.15"/>
-          </feComponentTransfer>
-        </filter>
-
-        <!-- Red -->
-        <filter id="filter-red">
-          <feColorMatrix type="matrix" values="
-            0.33 0.33 0.33 0 0
-            0.33 0.33 0.33 0 0
-            0.33 0.33 0.33 0 0
-            0 0 0 1 0
-          "/>
-          <feComponentTransfer>
-            <feFuncR type="linear" slope="1" intercept="0"/>
-            <feFuncG type="linear" slope="0.2" intercept="0"/>
-            <feFuncB type="linear" slope="0.2" intercept="0"/>
-          </feComponentTransfer>
-        </filter>
-
-        <!-- Green -->
-        <filter id="filter-green">
-          <feColorMatrix type="matrix" values="
-            0.33 0.33 0.33 0 0
-            0.33 0.33 0.33 0 0
-            0.33 0.33 0.33 0 0
-            0 0 0 1 0
-          "/>
-          <feComponentTransfer>
-            <feFuncR type="linear" slope="0.2" intercept="0"/>
-            <feFuncG type="linear" slope="1" intercept="0"/>
-            <feFuncB type="linear" slope="0.2" intercept="0"/>
-          </feComponentTransfer>
-        </filter>
-
-        <!-- Gold/Multi-color -->
-        <filter id="filter-gold">
-          <feColorMatrix type="matrix" values="
-            0.33 0.33 0.33 0 0
-            0.33 0.33 0.33 0 0
-            0.33 0.33 0.33 0 0
-            0 0 0 1 0
-          "/>
-          <feComponentTransfer>
-            <feFuncR type="linear" slope="1" intercept="0"/>
-            <feFuncG type="linear" slope="0.8" intercept="0"/>
-            <feFuncB type="linear" slope="0.2" intercept="0"/>
-          </feComponentTransfer>
-        </filter>
-
-        <!-- Artifact/Colorless -->
-        <filter id="filter-artifact">
-          <feColorMatrix type="matrix" values="
-            0.33 0.33 0.33 0 0
-            0.33 0.33 0.33 0 0
-            0.33 0.33 0.33 0 0
-            0 0 0 1 0
-          "/>
-          <feComponentTransfer>
-            <feFuncR type="linear" slope="0.7"/>
-            <feFuncG type="linear" slope="0.7"/>
-            <feFuncB type="linear" slope="0.7"/>
-          </feComponentTransfer>
-        </filter>
-      </defs>
-    </svg>
     <div class="library-container">
       <div class="library-header">
         <h1>Card Library</h1>
