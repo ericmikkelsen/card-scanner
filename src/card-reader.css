@@ -14,7 +14,26 @@
   gap: 2rem;
 }
 
-h2 {
+/* Main heading styles */
+.card-reader-container > h1,
+.card-reader-container > h2,
+.card-reader-container > h3,
+.card-reader-container > h4,
+.card-reader-container > h5,
+.card-reader-container > h6 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.75rem;
+  color: #333;
+  font-weight: 600;
+}
+
+/* Section heading styles */
+.phase > h1,
+.phase > h2,
+.phase > h3,
+.phase > h4,
+.phase > h5,
+.phase > h6 {
   margin: 0 0 1.5rem 0;
   font-size: 1.5rem;
   color: #333;
@@ -46,7 +65,12 @@ h2 {
   box-shadow: 0 4px 12px rgba(100, 108, 255, 0.1);
 }
 
-.option h3 {
+.option h1,
+.option h2,
+.option h3,
+.option h4,
+.option h5,
+.option h6 {
   margin: 0 0 1rem 0;
   font-size: 1.1rem;
   color: #333;

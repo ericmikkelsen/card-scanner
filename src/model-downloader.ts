@@ -47,7 +47,7 @@ const downloadModel = async (button: HTMLButtonElement, status: HTMLElement): Pr
   await languageModel!.create({
     monitor(m) {
       m.addEventListener('downloadprogress', (event) => {
-        const e = event as DownloadProgressEvent;
+        const e = event as unknown as DownloadProgressEvent;
         console.log('downloadprogress', e);
         
         const percent = Math.round((e.loaded / (e.total || e.loaded)) * 100);

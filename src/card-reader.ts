@@ -47,20 +47,30 @@ export class CardReader extends HTMLElement {
     styleSheet.replaceSync(styles);
     this.root.adoptedStyleSheets = [styleSheet];
 
+    // Get data attributes for dynamic heading levels and text
+    const headingLevel = parseInt(this.getAttribute('data-level') || '2', 10);
+    const headingText = this.getAttribute('data-heading') || 'card scanner';
+    const subheadingLevel = headingLevel + 1;
+
+    // Clamp heading levels to valid range (1-6)
+    const mainLevel = Math.max(1, Math.min(6, headingLevel));
+    const subLevel = Math.max(1, Math.min(6, subheadingLevel));
+
     const container = document.createElement('div');
     container.className = 'card-reader-container';
     container.innerHTML = `
+      <h${mainLevel}>${this.escapeHtml(headingText)}</h${mainLevel}>
       <div class="phase phase-add-image">
-        <h2>Add Card Image</h2>
+        <h${subLevel}>Add Card Image</h${subLevel}>
         <div class="image-options">
           <div class="option">
-            <h3>Upload Image</h3>
+            <h${subLevel + 1}>Upload Image</h${subLevel + 1}>
             <button class="upload-btn" type="button">Choose Image</button>
             <p class="option-description">Upload JPG, PNG, WebP, or Bitmap</p>
           </div>
           <div class="divider">or</div>
           <div class="option">
-            <h3>Take Picture</h3>
+            <h${subLevel + 1}>Take Picture</h${subLevel + 1}>
             <button class="camera-toggle-btn" type="button">Turn On Camera</button>
             <canvas class="camera-canvas" style="display: none;"></canvas>
             <button class="take-photo-btn" type="button" style="display: none;">Take Photo</button>
@@ -68,7 +78,7 @@ export class CardReader extends HTMLElement {
         </div>
       </div>
       <div class="phase phase-process-photo" style="display: none;">
-        <h2>Process Card</h2>
+        <h${subLevel}>Process Card</h${subLevel}>
         <div class="photo-preview"></div>
         <button class="process-btn" type="button">Extract Card Data</button>
         <button class="back-btn" type="button">Back</button>
