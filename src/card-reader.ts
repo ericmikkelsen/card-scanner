@@ -39,6 +39,26 @@ export class CardReader extends HTMLElement {
     return this.root.querySelector(selector);
   }
 
+  private announceToScreenReader(message: string) {
+    const liveRegion = this.qs<HTMLElement>('[role="status"]');
+    if (liveRegion) {
+      liveRegion.textContent = message;
+      // Clear after a short delay so repeated messages work
+      setTimeout(() => {
+        if (liveRegion) liveRegion.textContent = '';
+      }, 1000);
+    }
+  }
+
+  private setButtonLoading(button: HTMLButtonElement, loading: boolean) {
+    const textSpan = button.querySelector('.btn-text');
+    const spinner = button.querySelector('.spinner') as HTMLElement;
+    
+    button.disabled = loading;
+    if (textSpan) textSpan.textContent = loading && button.classList.contains('process-btn') ? 'Processing...' : textSpan.textContent;
+    if (spinner) spinner.style.display = loading ? 'inline-block' : 'none';
+  }
+
   constructor() {
     super();
     this.root = this.attachShadow({ mode: 'open' });
@@ -73,69 +93,77 @@ export class CardReader extends HTMLElement {
       </div>
       <div class="content-wrapper">
         <div class="image-section">
-        <h3>Add Card Image (optional)</h3>
-        <div class="image-options">
-          <div class="option option-camera">
-            <div class="camera-actions">
-              <button class="camera-toggle-btn" type="button">Start Camera</button>
-              <button class="take-photo-btn" type="button" disabled>Take Photo</button>
-            </div>
+          <h3>Add Card Image</h3>
+          <div class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+          <div class="camera-actions">
+            <button class="camera-toggle-btn" type="button">Start Camera</button>
+            <button class="upload-btn" type="button">Upload Image</button>
           </div>
           <div class="canvas-wrapper">
             <canvas class="camera-canvas"></canvas>
           </div>
-          <div class="option option-upload">
-            <h3>Upload Image</h3>
-            <button class="upload-btn" type="button">Choose Image</button>
-            <p class="option-description">Upload JPG, PNG, WebP, or Bitmap</p>
+          <div class="image-actions">
+            <button class="process-btn" type="button" style="display: none;">
+              <span class="btn-text">Extract Card Data</span>
+              <span class="spinner" style="display: none;"></span>
+            </button>
           </div>
         </div>
-        <div class="image-actions">
-          <button class="process-btn" type="button">Extract Card Data</button>
-          <button class="clear-image-btn" type="button">Clear Image</button>
+        <div class="form-section">
+          <h3>Card Details</h3>
+          <form class="card-data-form">
+            <div class="form-group">
+              <label for="${this.instanceId}-name">
+                <span class="label-text">Card Name <abbr title="required" class="required">*</abbr></span>
+                <input type="text" id="${this.instanceId}-name" class="input-name" value="" required aria-required="true" />
+              </label>
+            </div>
+            <div class="form-group">
+              <label for="${this.instanceId}-mana">
+                <span class="label-text">Mana Cost (comma separated)</span>
+                <input type="text" id="${this.instanceId}-mana" class="input-mana" value="" />
+              </label>
+            </div>
+            <div class="form-group">
+              <label for="${this.instanceId}-type">
+                <span class="label-text">Type <abbr title="required" class="required">*</abbr></span>
+                <input type="text" id="${this.instanceId}-type" class="input-type" value="" required aria-required="true" />
+              </label>
+            </div>
+            <div class="form-group">
+              <label for="${this.instanceId}-subtype">
+                <span class="label-text">Subtype</span>
+                <input type="text" id="${this.instanceId}-subtype" class="input-subtype" value="" />
+              </label>
+            </div>
+            <div class="form-group">
+              <label for="${this.instanceId}-text">
+                <span class="label-text">Card Text</span>
+                <textarea id="${this.instanceId}-text" class="input-text" rows="4"></textarea>
+              </label>
+            </div>
+            <div class="form-group">
+              <label for="${this.instanceId}-flavor">
+                <span class="label-text">Flavor Text</span>
+                <textarea id="${this.instanceId}-flavor" class="input-flavor flavor-text" rows="3"></textarea>
+              </label>
+            </div>
+            <div class="form-group form-group-grid">
+              <label for="${this.instanceId}-power">
+                <span class="label-text">Power</span>
+                <input type="number" id="${this.instanceId}-power" class="input-power" />
+              </label>
+              <label for="${this.instanceId}-toughness">
+                <span class="label-text">Toughness</span>
+                <input type="number" id="${this.instanceId}-toughness" class="input-toughness" />
+              </label>
+            </div>
+            <button type="submit" class="save-btn">
+              <span class="btn-text">Save Card</span>
+              <span class="spinner" style="display: none;"></span>
+            </button>
+            <div class="form-status" aria-live="polite"></div>
         </div>
-      </div>
-      <div class="form-section">
-        <h3>Card Details</h3>
-        <form class="card-data-form">
-          <div class="form-group">
-            <label for="${this.instanceId}-name">Card Name</label>
-            <input type="text" id="${this.instanceId}-name" class="input-name" value="" required />
-          </div>
-          <div class="form-group">
-            <label for="${this.instanceId}-mana">Mana Cost (comma separated)</label>
-            <input type="text" id="${this.instanceId}-mana" class="input-mana" value="" />
-          </div>
-          <div class="form-group">
-            <label for="${this.instanceId}-type">Type</label>
-            <input type="text" id="${this.instanceId}-type" class="input-type" value="" />
-          </div>
-          <div class="form-group">
-            <label for="${this.instanceId}-subtype">Subtype</label>
-            <input type="text" id="${this.instanceId}-subtype" class="input-subtype" value="" />
-          </div>
-          <div class="form-group">
-            <label for="${this.instanceId}-text">Card Text</label>
-            <textarea id="${this.instanceId}-text" class="input-text" rows="4"></textarea>
-          </div>
-          <div class="form-group">
-            <label for="${this.instanceId}-flavor">Flavor Text</label>
-            <textarea id="${this.instanceId}-flavor" class="input-flavor flavor-text" rows="3"></textarea>
-          </div>
-          <div class="form-group form-group-grid">
-            <div>
-              <label for="${this.instanceId}-power">Power</label>
-              <input type="number" id="${this.instanceId}-power" class="input-power" />
-            </div>
-            <div>
-              <label for="${this.instanceId}-toughness">Toughness</label>
-              <input type="number" id="${this.instanceId}-toughness" class="input-toughness" />
-            </div>
-          </div>
-          <button type="submit" class="save-btn">Save Card</button>
-        </form>
-        <div class="form-status" aria-live="polite"></div>
-      </div>
       </div>
     `;
 
@@ -159,9 +187,7 @@ export class CardReader extends HTMLElement {
     this.qs<HTMLButtonElement>('.upload-btn')?.addEventListener('click', () => this.fileInput?.click());
     this.fileInput?.addEventListener('change', (e) => this.handleFileSelect(e as Event));
     this.qs<HTMLButtonElement>('.camera-toggle-btn')?.addEventListener('click', () => this.toggleCamera());
-    this.qs<HTMLButtonElement>('.take-photo-btn')?.addEventListener('click', () => this.capturePhoto());
     this.qs<HTMLButtonElement>('.process-btn')?.addEventListener('click', () => this.processCard());
-    this.qs<HTMLButtonElement>('.clear-image-btn')?.addEventListener('click', () => this.clearImage());
     this.qs<HTMLButtonElement>('.close-btn')?.addEventListener('click', () => this.closeReader());
     this.qs<HTMLFormElement>('.card-data-form')?.addEventListener('submit', (e) => this.onSaveCard(e));
     this.updateCloseButtonVisibility();
@@ -180,6 +206,13 @@ export class CardReader extends HTMLElement {
 
   private closeReader() {
     this.stopCamera();
+    
+    // Return focus to add button or another reader
+    const addBtn = document.getElementById('addCardReaderBtn');
+    if (addBtn) {
+      addBtn.focus();
+    }
+    
     this.remove();
   }
 
@@ -266,24 +299,34 @@ export class CardReader extends HTMLElement {
     img.src = URL.createObjectURL(blob);
   }
 
-  private setCameraUI(isActive: boolean) {
-    const btn = this.qs<HTMLButtonElement>('.camera-toggle-btn');
+  private updateButtonStates() {
+    const cameraBtn = this.qs<HTMLButtonElement>('.camera-toggle-btn');
+    const processBtn = this.qs<HTMLButtonElement>('.process-btn');
     const canvas = this.qs<HTMLCanvasElement>('.camera-canvas');
-    const captureBtn = this.qs<HTMLButtonElement>('.take-photo-btn');
 
-    if (btn) btn.textContent = isActive ? 'Stop Camera' : 'Start Camera';
-    if (canvas) canvas.classList.toggle('camera-active', isActive);
-    if (captureBtn) {
-      captureBtn.disabled = !isActive;
-      captureBtn.classList.toggle('active', isActive);
+    const isActive = Boolean(this.mediaStream);
+    const hasImage = Boolean(this.currentImage);
+
+    // Update camera button text and announce state
+    if (cameraBtn) {
+      const newText = isActive ? 'Take Photo' : 'Start Camera';
+      if (cameraBtn.textContent !== newText) {
+        cameraBtn.textContent = newText;
+        if (isActive) {
+          this.announceToScreenReader('Camera started. Press spacebar to take photo.');
+        }
+      }
     }
-  }
 
-  private clearImage() {
-    this.currentImage = null;
-    this.renderPreview(null);
-    this.setStatus('', 'info');
-    this.setCameraUI(Boolean(this.mediaStream));
+    // Update canvas mirror effect
+    if (canvas) {
+      canvas.classList.toggle('camera-active', isActive);
+    }
+
+    // Show/hide process button
+    if (processBtn) {
+      processBtn.style.display = hasImage ? 'block' : 'none';
+    }
   }
 
   private handleFileSelect(e: Event) {
@@ -298,11 +341,12 @@ export class CardReader extends HTMLElement {
 
     if (this.mediaStream) {
       this.stopCamera();
-      this.setCameraUI(false);
     }
 
     this.currentImage = { blob: file, source: 'upload' };
     this.renderPreview(file);
+    this.updateButtonStates();
+    this.setStatus('', 'info');
   }
 
   private async toggleCamera() {
@@ -310,12 +354,13 @@ export class CardReader extends HTMLElement {
     if (!canvas) return;
 
     if (this.mediaStream) {
-      this.stopCamera();
-      this.setCameraUI(false);
+      // Take photo if camera is active
+      this.capturePhoto();
     } else {
+      // Start camera
       try {
         await this.startCamera(canvas);
-        this.setCameraUI(true);
+        this.updateButtonStates();
       } catch (error) {
         console.error('Camera error:', error);
         alert('Unable to access camera');
@@ -414,8 +459,9 @@ export class CardReader extends HTMLElement {
         if (!blob) return;
         this.currentImage = { blob, source: 'camera' };
         this.stopCamera();
-        this.setCameraUI(false);
         this.renderPreview(blob);
+        this.updateButtonStates();
+        this.setStatus('', 'info');
       },
       'image/jpeg',
       0.95
@@ -447,7 +493,7 @@ export class CardReader extends HTMLElement {
     const btn = this.qs<HTMLButtonElement>('.process-btn');
     if (!btn) return;
 
-    btn.disabled = true;
+    this.setButtonLoading(btn, true);
     this.setStatus('Processing image...', 'info');
 
     try {
@@ -515,7 +561,9 @@ If the card is not a creature, set power and toughness to null.`,
       this.setStatus(`Error: ${message}`, 'error');
       console.error('Card processing error:', error);
     } finally {
-      btn.disabled = false;
+      this.setButtonLoading(btn, false);
+      const textSpan = btn.querySelector('.btn-text');
+      if (textSpan) textSpan.textContent = 'Extract Card Data';
     }
   }
 
@@ -529,8 +577,14 @@ If the card is not a creature, set power and toughness to null.`,
 
     if (!inputs.name?.value || !inputs.type?.value) {
       this.setStatus('Name and Type are required.', 'error');
+      inputs.name?.focus();
       return;
     }
+
+    const saveBtn = this.qs<HTMLButtonElement>('.save-btn');
+    if (!saveBtn) return;
+
+    this.setButtonLoading(saveBtn, true);
 
     try {
       const manaCost = (inputs.mana?.value || '')
@@ -555,7 +609,15 @@ If the card is not a creature, set power and toughness to null.`,
       this.dispatchEvent(new CustomEvent('cardSaved', { detail: { id: cardId, name: inputs.name.value } }));
     } catch (error) {
       console.error('Failed to save card:', error);
-      this.setStatus('Failed to save card. Please try again.', 'error');
+      
+      // Check for quota exceeded error
+      if (error instanceof Error && (error.name === 'QuotaExceededError' || error.message.includes('quota'))) {
+        this.setStatus('Storage quota exceeded. Please delete some cards from your library.', 'error');
+      } else {
+        this.setStatus('Failed to save card. Please try again.', 'error');
+      }
+    } finally {
+      this.setButtonLoading(saveBtn, false);
     }
   }
 }
