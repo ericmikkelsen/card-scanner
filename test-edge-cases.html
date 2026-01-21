@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edge Case Test</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body style="padding: 2rem;">
+    <h1>Edge Case Tests</h1>
+    
+    <div style="margin-bottom: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 8px;">
+      <h2>Test: data-level="5"</h2>
+      <p>Expected: h5 main, h6 sections, h6 options (clamped, not h7)</p>
+      <card-reader data-level="5"></card-reader>
+    </div>
+
+    <div style="margin-bottom: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 8px;">
+      <h2>Test: data-level="6"</h2>
+      <p>Expected: h6 main, h6 sections (clamped), h6 options (clamped)</p>
+      <card-reader data-level="6"></card-reader>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

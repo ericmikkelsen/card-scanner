@@ -51,10 +51,12 @@ export class CardReader extends HTMLElement {
     const headingLevel = parseInt(this.getAttribute('data-level') || '2', 10);
     const headingText = this.getAttribute('data-heading') || 'card scanner';
     const subheadingLevel = headingLevel + 1;
+    const optionHeadingLevel = headingLevel + 2;
 
     // Clamp heading levels to valid range (1-6)
     const mainLevel = Math.max(1, Math.min(6, headingLevel));
     const subLevel = Math.max(1, Math.min(6, subheadingLevel));
+    const optionLevel = Math.max(1, Math.min(6, optionHeadingLevel));
 
     const container = document.createElement('div');
     container.className = 'card-reader-container';
@@ -64,13 +66,13 @@ export class CardReader extends HTMLElement {
         <h${subLevel}>Add Card Image</h${subLevel}>
         <div class="image-options">
           <div class="option">
-            <h${subLevel + 1}>Upload Image</h${subLevel + 1}>
+            <h${optionLevel}>Upload Image</h${optionLevel}>
             <button class="upload-btn" type="button">Choose Image</button>
             <p class="option-description">Upload JPG, PNG, WebP, or Bitmap</p>
           </div>
           <div class="divider">or</div>
           <div class="option">
-            <h${subLevel + 1}>Take Picture</h${subLevel + 1}>
+            <h${optionLevel}>Take Picture</h${optionLevel}>
             <button class="camera-toggle-btn" type="button">Turn On Camera</button>
             <canvas class="camera-canvas" style="display: none;"></canvas>
             <button class="take-photo-btn" type="button" style="display: none;">Take Photo</button>
