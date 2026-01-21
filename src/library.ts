@@ -41,6 +41,19 @@ function renderCards(cards: SavedCard[]) {
   container.innerHTML = cards.map((card) => {
     const imageUrl = URL.createObjectURL(card.imageBlob);
     blobUrls.add(imageUrl);
+    
+    // Show power/toughness for creatures only
+    const isCreature = card.type.toLowerCase().includes('creature');
+    const hasPowerToughness = card.power !== null && card.toughness !== null;
+    const ptDisplay = isCreature && hasPowerToughness 
+      ? `<p class="card-pt">${card.power}/${card.toughness}</p>` 
+      : '';
+    
+    // Show card text if present
+    const cardText = card.text 
+      ? `<p class="card-text">${escapeHtml(card.text)}</p>` 
+      : '';
+    
     return `
       <div class="card-item">
         <img src="${imageUrl}" alt="${escapeHtml(card.name)}" class="card-image-preview" />
@@ -48,7 +61,12 @@ function renderCards(cards: SavedCard[]) {
           <h3 class="card-name">${escapeHtml(card.name)}</h3>
           <p class="card-type">${escapeHtml(card.type)} — ${escapeHtml(card.subtype)}</p>
           <p class="card-mana">${escapeHtml(card.manaCost.join(', '))}</p>
-          <button class="delete-btn" data-card-id="${card.id}" data-card-name="${escapeHtml(card.name)}">Delete</button>
+          ${ptDisplay}
+          ${cardText}
+          <div class="card-actions">
+            <a href="/card/?id=${encodeURIComponent(card.id)}" class="edit-btn">Edit</a>
+            <button class="delete-btn" data-card-id="${card.id}" data-card-name="${escapeHtml(card.name)}">Delete</button>
+          </div>
         </div>
       </div>
     `;
