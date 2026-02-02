@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Card Library | Magic Organizer</title>
+    <link rel="stylesheet" href="/src/style.css" />
+    <style>
+      :root {
+        --mtg-white: rgba(255, 255, 255, 0.9);
+        --mtg-blue: rgba(0, 107, 255, 0.7);
+        --mtg-black: rgba(0, 0, 0, 0.85);
+        --mtg-red: rgba(255, 45, 32, 0.75);
+        --mtg-green: rgba(0, 170, 70, 0.7);
+      }
+
+      body {
+        background: #fff;
+        min-height: 100vh;
+        padding: 0;
+        position: relative;
+      }
+
+      /* Geometric background elements */
+      body::before {
+        content: '';
+        position: fixed;
+        top: 10%;
+        left: -5%;
+        width: 35vw;
+        height: 35vw;
+        border-radius: 50%;
+        background: radial-gradient(circle, var(--mtg-green) 0%, transparent 70%);
+        opacity: 0.12;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      body::after {
+        content: '';
+        position: fixed;
+        bottom: 10%;
+        right: -10%;
+        width: 45vw;
+        height: 45vw;
+        border-radius: 50%;
+        background: radial-gradient(circle, var(--mtg-blue) 0%, transparent 70%);
+        opacity: 0.1;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .library-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        background: white;
+        border: 4px solid #000;
+        box-shadow: 16px 16px 0 rgba(0, 0, 0, 0.1);
+        position: relative;
+        z-index: 1;
+        margin: 2rem;
+      }
+
+      /* Corner accents */
+      .library-container::before {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        width: 80px;
+        height: 80px;
+        background: var(--mtg-red);
+        clip-path: polygon(0 0, 100% 0, 0 100%);
+        z-index: 2;
+      }
+
+      .library-container::after {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        right: -4px;
+        width: 80px;
+        height: 80px;
+        background: var(--mtg-green);
+        clip-path: polygon(100% 0, 100% 100%, 0 100%);
+        z-index: 2;
+      }
+
+      .library-header {
+        background: #000;
+        color: white;
+        padding: 2.5rem 2rem 2rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        position: relative;
+      }
+
+      /* MTG color stripe */
+      .library-header::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 6px;
+        background: linear-gradient(to right,
+          var(--mtg-white) 0%, var(--mtg-white) 20%,
+          var(--mtg-blue) 20%, var(--mtg-blue) 40%,
+          var(--mtg-black) 40%, var(--mtg-black) 60%,
+          var(--mtg-red) 60%, var(--mtg-red) 80%,
+          var(--mtg-green) 80%, var(--mtg-green) 100%
+        );
+      }
+
+      .library-header h1 {
+        margin: 0;
+        font-size: 2.5rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+
+      .library-controls {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .search-form {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .search-input {
+        padding: 0.75rem 1rem;
+        border: 2px solid #fff;
+        background: #fff;
+        color: #000;
+        width: 250px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        outline: none;
+        transition: all 0.2s ease;
+      }
+
+      .search-input:focus {
+        box-shadow: 4px 4px 0 var(--mtg-blue);
+        transform: translate(-2px, -2px);
+      }
+
+      .search-btn {
+        padding: 0.75rem 1.5rem;
+        background: #fff;
+        color: #000;
+        border: 3px solid #fff;
+        cursor: pointer;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        transition: all 0.2s ease;
+        font-size: 0.85rem;
+      }
+
+      .search-btn:hover:not(:disabled) {
+        background: var(--mtg-blue);
+        border-color: var(--mtg-blue);
+        color: #fff;
+        transform: translateY(-2px);
+      }
+
+      .back-btn {
+        background: transparent;
+        color: white;
+        border: 3px solid white;
+        padding: 0.75rem 1.5rem;
+        cursor: pointer;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+      .back-btn:hover {
+        background: var(--mtg-red);
+        border-color: var(--mtg-red);
+        transform: translateY(-2px);
+      }
+
+      .library-content {
+        padding: 3rem 2rem;
+        background: #fff;
+      }
+
+      .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 2rem;
+      }
+
+      .card-item {
+        border: 3px solid #000;
+        background: #fff;
+        transition: all 0.2s;
+        cursor: pointer;
+        position: relative;
+        box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.1);
+      }
+
+      /* Rotating color accents on cards */
+      .card-item:nth-child(5n+1)::before {
+        content: '';
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        width: 30px;
+        height: 30px;
+        background: var(--mtg-white);
+        clip-path: polygon(100% 0, 100% 100%, 0 0);
+      }
+
+      .card-item:nth-child(5n+2)::before {
+        content: '';
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        width: 30px;
+        height: 30px;
+        background: var(--mtg-blue);
+        clip-path: polygon(100% 0, 100% 100%, 0 0);
+      }
+
+      .card-item:nth-child(5n+3)::before {
+        content: '';
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        width: 30px;
+        height: 30px;
+        background: var(--mtg-black);
+        clip-path: polygon(100% 0, 100% 100%, 0 0);
+      }
+
+      .card-item:nth-child(5n+4)::before {
+        content: '';
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        width: 30px;
+        height: 30px;
+        background: var(--mtg-red);
+        clip-path: polygon(100% 0, 100% 100%, 0 0);
+      }
+
+      .card-item:nth-child(5n+5)::before {
+        content: '';
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        width: 30px;
+        height: 30px;
+        background: var(--mtg-green);
+        clip-path: polygon(100% 0, 100% 100%, 0 0);
+      }
+
+      .card-item:hover {
+        transform: translate(-4px, -4px);
+        box-shadow: 10px 10px 0 rgba(0, 0, 0, 0.15);
+      }
+
+      .card-image-preview {
+        width: 100%;
+        height: auto;
+        object-fit: contain;
+        background: #000;
+        display: block;
+        border-bottom: 2px solid #000;
+      }
+
+      .card-info {
+        padding: 1.25rem;
+        background: #fff;
+      }
+
+      .card-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #000;
+        margin: 0 0 0.5rem 0;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+
+      .card-type {
+        font-size: 0.85rem;
+        color: #000;
+        margin: 0.25rem 0;
+        font-weight: 500;
+      }
+
+      .card-mana {
+        font-size: 0.8rem;
+        color: #000;
+        font-weight: 700;
+        margin: 0.75rem 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .card-pt {
+        font-size: 0.9rem;
+        color: #000;
+        font-weight: 700;
+        margin: 0.5rem 0;
+        padding: 0.25rem 0.5rem;
+        background: rgba(0, 0, 0, 0.05);
+        display: inline-block;
+        border: 2px solid #000;
+      }
+
+      .card-text {
+        font-size: 0.85rem;
+        color: #333;
+        line-height: 1.5;
+        margin: 0.75rem 0;
+        padding: 0.5rem 0;
+        border-top: 1px solid #e0e0e0;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        max-height: 8rem;
+        overflow-y: auto;
+      }
+
+      .card-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+
+      .edit-btn {
+        flex: 1;
+        padding: 0.75rem;
+        background: var(--mtg-blue);
+        color: white;
+        border: 2px solid transparent;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        transition: all 0.2s;
+        text-decoration: none;
+        text-align: center;
+        display: block;
+      }
+
+      .edit-btn:hover {
+        background: #000;
+        transform: translateY(-2px);
+        box-shadow: 3px 3px 0 rgba(30, 100, 200, 0.3);
+      }
+
+      .delete-btn {
+        flex: 1;
+        padding: 0.75rem;
+        background: var(--mtg-red);
+        color: white;
+        border: 2px solid transparent;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        transition: all 0.2s;
+      }
+
+      .delete-btn:hover {
+        background: #000;
+        transform: translateY(-2px);
+        box-shadow: 3px 3px 0 rgba(220, 40, 30, 0.3);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #000;
+        border: 3px dashed #000;
+        background: rgba(0, 0, 0, 0.02);
+      }
+
+      .empty-state h2 {
+        margin: 0 0 1rem 0;
+        color: #000;
+        font-weight: 900;
+        text-transform: uppercase;
+        font-size: 1.5rem;
+      }
+
+      .empty-state p {
+        margin: 0;
+        font-weight: 500;
+      }
+
+      .empty-state a {
+        color: var(--mtg-red);
+        font-weight: 700;
+        text-decoration: none;
+        border-bottom: 2px solid var(--mtg-red);
+      }
+
+      .empty-state a:hover {
+        background: var(--mtg-red);
+        color: #fff;
+      }
+
+      .card-count {
+        background: #fff;
+        color: #000;
+        padding: 0.75rem 1.25rem;
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border: 2px solid #fff;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #000;
+        font-weight: 500;
+        font-size: 1.1rem;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+      }
+
+      .modal.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal-content {
+        background: white;
+        padding: 2.5rem;
+        max-width: 500px;
+        border: 4px solid #000;
+        box-shadow: 12px 12px 0 rgba(0, 0, 0, 0.3);
+        position: relative;
+      }
+
+      /* Corner accent on modal */
+      .modal-content::before {
+        content: '';
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        width: 50px;
+        height: 50px;
+        background: var(--mtg-red);
+        clip-path: polygon(100% 0, 100% 100%, 0 0);
+      }
+
+      .modal-content h2 {
+        margin: 0 0 1rem 0;
+        font-weight: 900;
+        text-transform: uppercase;
+        font-size: 1.5rem;
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 2rem;
+      }
+
+      .modal-btn {
+        padding: 0.875rem 1.75rem;
+        border: 3px solid #000;
+        cursor: pointer;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        transition: all 0.2s;
+      }
+
+      .modal-confirm {
+        background: var(--mtg-red);
+        color: white;
+        border-color: var(--mtg-red);
+      }
+
+      .modal-confirm:hover {
+        background: #000;
+        border-color: #000;
+        transform: translateY(-2px);
+        box-shadow: 4px 4px 0 rgba(220, 40, 30, 0.3);
+      }
+
+      .modal-cancel {
+        background: #fff;
+        color: #000;
+        border-color: #000;
+      }
+
+      .modal-cancel:hover {
+        background: #000;
+        color: #fff;
+        transform: translateY(-2px);
+      }
+
+      .modal-warning {
+        color: #666;
+        font-size: 0.9rem;
+        margin: 1rem 0 0 0;
+        font-weight: 500;
+      }
+
+      @media (max-width: 768px) {
+        .library-container {
+          margin: 1rem;
+          box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .library-header {
+          padding: 1.5rem;
+        }
+
+        .library-header h1 {
+          font-size: 1.75rem;
+        }
+
+        .library-content {
+          padding: 1.5rem;
+        }
+
+        .cards-grid {
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+        }
+
+        .search-input {
+          width: 100%;
+        }
+      }
+
+    </style>
+  </head>
+  <body>
+    <div class="library-container">
+      <div class="library-header">
+        <h1>Card Library</h1>
+        <div class="library-controls">
+          <form class="search-form" onsubmit="return false;">
+            <input type="text" class="search-input" id="search" placeholder="Search cards..." aria-label="Search cards" />
+            <button type="button" class="search-btn" aria-label="Submit search">Search</button>
+          </form>
+          <div class="card-count"><span id="card-count">0</span> cards</div>
+          <a href="/" class="back-btn">← Back</a>
+        </div>
+      </div>
+
+      <div class="library-content">
+        <div id="loading" class="loading">Loading cards...</div>
+        <div id="cards-container" class="cards-grid" style="display: none;"></div>
+        <div id="empty-state" class="empty-state" style="display: none;">
+          <h2>No cards saved yet</h2>
+          <p><a href="/">Start scanning cards</a> to build your library.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="delete-modal" class="modal" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+      <div class="modal-content">
+        <h2 id="modal-title">Delete Card?</h2>
+        <p id="delete-card-name"></p>
+        <p class="modal-warning">This action cannot be undone.</p>
+        <div class="modal-actions">
+          <button type="button" class="modal-btn modal-cancel">Cancel</button>
+          <button type="button" class="modal-btn modal-confirm">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/library.ts"></script>
+  </body>
+</html>
